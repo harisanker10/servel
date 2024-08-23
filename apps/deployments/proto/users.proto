@@ -1,0 +1,80 @@
+syntax = "proto3";
+
+package users;
+
+message User {
+  string id = 1;
+  string email = 2;
+  optional string password = 3;
+  optional string fullname = 4;
+  optional string avatar = 5;
+  optional string githubId = 6;
+  bool isBlocked = 7;
+  bool isProMember = 8;
+  int32 createdAt = 9;
+  int32 updatedAt = 10;
+  repeated string authType = 11;
+}
+
+service UserService {
+  rpc CreateUserWithCredentials(CreateUserWithCredentialsDto) returns (User) {}
+  rpc CreateUserWithGoogle(CreateUserWithGoogleDto) returns (User) {}
+  rpc CreateUserWithGithub(CreateUserWithGithubDto) returns (User) {}
+  rpc FindAllUsers(Empty) returns (stream Users) {}
+  rpc FindOneUser(FindOneUserDto) returns (User) {}
+  rpc RemoveUser(FindOneUserDto) returns (User) {}
+  rpc QueryUsers(stream PaginationDto) returns (stream Users) {}
+  rpc UpdateUser(UpdateUserDto) returns (User) {}
+}
+
+message CreateUserWithGoogleDto {
+  string email = 1;
+  string avatar = 2;
+  string fullname = 3;
+}
+
+message CreateUserWithGithubDto {
+  string email = 1;
+  string avatar = 2;
+  string fullname = 3;
+  string githubId = 4;
+}
+
+message CreateUserWithCredentialsDto {
+  string email = 1;
+  string password = 2;
+}
+
+message QueryUserDto {
+  optional string email = 1;
+  optional string githubId = 2;
+  optional bool isBlocked = 3;
+  optional bool isProMember = 4;
+  optional int32 createdAt = 5;
+  optional int32 sort = 6;
+}
+message UpdateUserDto {
+  optional string email = 1;
+  optional string password = 2;
+  optional string newPassword = 3;
+  optional string avatar = 4;
+  optional string githubId = 5;
+  optional bool isBlocked = 6;
+  optional bool isProMember = 7;
+}
+
+message FindOneUserDto {
+  optional string id = 1;
+  optional string email = 2;
+  optional string githubId = 3;
+}
+
+message Users { repeated User users = 1; }
+
+message PaginationDto {
+  int32 page = 1;
+  int32 skip = 2;
+  QueryUserDto query = 3;
+}
+
+message Empty {}

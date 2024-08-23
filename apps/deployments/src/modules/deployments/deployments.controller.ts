@@ -1,0 +1,71 @@
+import { Controller, Inject } from '@nestjs/common';
+import { DeploymentsService } from './deployments.service';
+import { ClientKafka, RpcException } from '@nestjs/microservices';
+import {
+  BuildQueueMessage,
+  CreateImageDeploymentDto,
+  CreateStaticSiteDto,
+  CreateWebServiceDto,
+  Deployment,
+  DeploymentsServiceController,
+  DeploymentsServiceControllerMethods,
+  GetDeploymentDto,
+  InstanceType,
+} from '@servel/dto';
+import { Observable } from 'rxjs';
+import { getReponame } from 'src/utils/getReponame';
+
+@Controller()
+@DeploymentsServiceControllerMethods()
+export class DeploymentsController implements DeploymentsServiceController {
+  constructor(
+    @Inject('kafka-service') private readonly kafkaClient: ClientKafka,
+    private readonly deplService: DeploymentsService,
+  ) {
+    console.log('elon ma\n');
+  }
+
+  createStaticSite(
+    request: CreateStaticSiteDto,
+  ): Deployment | Promise<Deployment> | Observable<Deployment> {
+    return new Observable();
+  }
+
+  createImageDeployment(
+    request: CreateImageDeploymentDto,
+  ): Deployment | Promise<Deployment> | Observable<Deployment> {
+    return new Observable();
+  }
+
+  async createWebService(depl: CreateWebServiceDto): Promise<Deployment> {
+    const savedDepl = await this.deplService.createWebService(depl);
+    console.log({ savedDepl });
+
+    const buildQueueMsg: BuildQueueMessage = {
+      version: savedDepl.version,
+      port: 3000,
+      id: savedDepl.id,
+      userId: depl.userId,
+      repoName: savedDepl.repoName,
+      instanceType: InstanceType[depl.instanceType],
+      githubAccessToken: 'asdf',
+      type: savedDepl.type,
+      repoUrl: savedDepl.repoUrl,
+      outDir: savedDepl.outDir,
+      buildCommand: savedDepl.buildCommand,
+      runCommand: savedDepl.runCommand,
+      env: {},
+    };
+
+    this.kafkaClient.emit('build-queue', buildQueueMsg);
+    return savedDepl;
+  }
+
+  async getDeployment({ id }: GetDeploymentDto): Promise<Deployment> {
+    const depl = await this.deplService.getDeployment(id);
+    if (!depl) {
+      throw new RpcException({ details: 'not found' });
+    }
+    return depl;
+  }
+}

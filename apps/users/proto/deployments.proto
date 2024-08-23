@@ -1,0 +1,58 @@
+syntax = "proto3";
+
+package deployments;
+
+message Deployment {
+  string id = 1;
+  string repoName = 2;
+  string repoUrl = 3;
+  string status = 4;
+  string outDir = 5;
+  string runCommand = 6;
+  string buildCommand = 7;
+  string userId = 8;
+  int32 createdAt = 9;
+  int32 updatedAt = 10;
+  string type = 11;
+  string instanceType = 12;
+  string deploymentUrl = 13;
+  string githubAccessToken = 14;
+}
+
+service DeploymentsService {
+  rpc CreateWebService(CreateWebServiceDto) returns (Deployment) {}
+  rpc CreateStaticSite(CreateStaticSiteDto) returns (Deployment) {}
+  rpc CreateImageDeployment(CreateImageDeploymentDto) returns (Deployment) {}
+  rpc GetDeployment(GetDeploymentDto) returns (Deployment) {}
+}
+
+message CreateStaticSiteDto {
+  string url = 2;
+  string userId = 3;
+  optional string outDir = 4;
+  string runCommand = 5;
+  optional string buildCommand = 6;
+  map<string,string> envs = 8;
+}
+
+message CreateWebServiceDto {
+  string url = 2;
+  string userId = 3;
+  optional string outDir = 4;
+  string runCommand = 5;
+  optional string buildCommand = 6;
+  string instanceType = 7;
+  map<string,string> envs = 8;
+}
+
+message CreateImageDeploymentDto {
+  string url = 2;
+  string userId = 3;
+  optional string outDir = 4;
+  string runCommand = 5;
+  optional string buildCommand = 6;
+  string instanceType = 7;
+
+}
+
+message GetDeploymentDto { string id = 1; }
