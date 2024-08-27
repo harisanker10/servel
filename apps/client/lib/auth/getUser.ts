@@ -4,11 +4,6 @@ import { $api } from "@/http";
 import { getCookie } from "../session/getSession";
 
 export async function getUser() {
-  // const user = await $api
-  //   .get("auth/user")
-  //   .then((data) => data.data)
-  //   .catch((err) => console.log("error getting user"));
-
   try {
     const token = await getCookie();
     const response = await fetch(`${process.env.API_GATEWAY_URL}/auth/user`, {

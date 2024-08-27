@@ -24,11 +24,9 @@ export class JWTGuard implements CanActivate {
       const user = await this.jwtService.verifyAsync(token, {
         secret: env.JWT_SECRET,
       });
-      console.log({ user });
       if (user && 'email' in user) {
         const savedUser = await this.authService.getUser(user.email);
         delete savedUser?.password;
-        console.log({ savedUser });
         if (savedUser) request.user = savedUser;
         else throw new UnauthorizedException();
         return true;

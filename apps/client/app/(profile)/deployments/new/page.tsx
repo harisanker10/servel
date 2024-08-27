@@ -5,22 +5,41 @@ import { DeploymentDetails } from "./deploymentDetails";
 import { EnvCard } from "./envInputCard";
 import { Button } from "@/components/ui/button";
 import { InstanceTypeSelectCard } from "./instanceTypeSelectCard";
+import { createDeployment } from "@/actions/deployments/createDeployment";
 
-interface FormValue {
-  type: "service" | "static-site";
-  gitUrl: string;
-  outDir: string | null;
-  buildCommand: string | null;
-  startCommand: string | null;
+interface FormValues {
+  url: string;
+  outDir: string;
+  buildCommand: string;
+  runCommand: string;
 }
 
 export default function CreateDeployment() {
   const [service, setService] = useState<
     "web-service" | "static-site" | "image"
   >("web-service");
-  const [instanceType, setInstanceType] = useState("");
-  const [values, setValues] = useState({});
-  console.log({ values, instanceType, service });
+  const [instanceType, setInstanceType] = useState("tier_0");
+  const [envs, setEnvs] = useState<Record<string, string>>({});
+  const [values, setValues] = useState<FormValues>({
+    url: "",
+    outDir: "",
+    runCommand: "",
+    buildCommand: "",
+  });
+
+  const deploy = () => {
+    const deployment = {
+      ...values,
+      instanceType,
+    };
+    //@ts-ignore
+    createDeployment({
+      instanceType,
+      ...values,
+      envs,
+    });
+  };
+
   return (
     <>
       <div className="flex flex-col mx-auto w-3/4 gap-8 p-6 sm:p-10">
@@ -45,7 +64,9 @@ export default function CreateDeployment() {
             onInstanceChange={setInstanceType}
           />
         )}
-        <Button className="ms-auto w-32 mb-10">Deploy</Button>
+        <Button className="ms-auto w-32 mb-10" onClick={deploy}>
+          Deploy
+        </Button>
       </div>
     </>
   );

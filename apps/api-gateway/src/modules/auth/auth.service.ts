@@ -44,6 +44,10 @@ export class AuthService implements OnModuleInit {
     return newUser;
   }
 
+  // updateFullname(email, fullname) {
+  //   return lastValueFrom(this.userService.updateUser({ email,  }));
+  // }
+
   async createUserWithGoogle(user: CreateUserWithGoogleDto) {
     return lastValueFrom(this.userService.createUserWithGoogle(user));
   }

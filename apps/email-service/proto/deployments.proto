@@ -20,12 +20,36 @@ message Deployment {
 }
 
 service DeploymentsService {
-  rpc CreateWebService(CreateWebServiceDto) returns (Deployment) {}
-  rpc CreateStaticSite(CreateStaticSiteDto) returns (Deployment) {}
-  rpc CreateImageDeployment(CreateImageDeploymentDto) returns (Deployment) {}
+  // rpc CreateWebService(CreateWebServiceDto) returns (Deployment) {}
+
+  rpc CreateDeployment(CreateStaticSiteDto) returns (Deployment) {}
+  // rpc CreateStaticSite(CreateStaticSiteDto) returns (Deployment) {}
+  // rpc CreateImageDeployment(CreateImageDeploymentDto) returns (Deployment) {}
   rpc GetDeployment(GetDeploymentDto) returns (Deployment) {}
+  rpc GetUsersDeployments(GetUsersDeploymentsDto) returns (Deployments) {}
 }
 
+message GetUsersDeploymentsDto {
+  string userId = 1;
+}
+
+message CreateDeploymentDto {
+  optional string githubAccessToken = 1;
+  optional string repoName = 2;
+  string repoUrl = 3;
+  optional string outDir = 5;
+  optional string runCommand = 6;
+  optional string buildCommand = 7;
+  string userId = 8;
+  int32 createdAt = 9;
+  int32 updatedAt = 10;
+  string type = 11;
+  optional string instanceType = 12;
+}
+
+message Deployments {
+  repeated Deployment deployments = 1;
+}
 message CreateStaticSiteDto {
   string url = 2;
   string userId = 3;

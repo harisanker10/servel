@@ -2,57 +2,100 @@ syntax = "proto3";
 
 package deployments;
 
+
 message Deployment {
   string id = 1;
-  string repoName = 2;
-  string repoUrl = 3;
-  string status = 4;
-  string outDir = 5;
-  string runCommand = 6;
-  string buildCommand = 7;
-  string userId = 8;
-  int32 createdAt = 9;
-  int32 updatedAt = 10;
-  string type = 11;
-  string instanceType = 12;
-  string deploymentUrl = 13;
-  string githubAccessToken = 14;
+  string deploymentName = 2;
+  string status = 3;
+  string userId = 4;
+  int32 createdAt = 5;
+  int32 updatedAt = 6;
+  string deploymentUrl = 7;
+  DeploymentType deploymentType = 8;
+  oneof type {
+    ImageData imageData = 9;
+    WebServiceData webServiceData = 10;
+    StaticSiteData staticSiteData = 11;
+  }
 }
+
 
 service DeploymentsService {
-  rpc CreateWebService(CreateWebServiceDto) returns (Deployment) {}
-  rpc CreateStaticSite(CreateStaticSiteDto) returns (Deployment) {}
-  rpc CreateImageDeployment(CreateImageDeploymentDto) returns (Deployment) {}
+  rpc CreateDeployment(CreateDeploymentDto) returns (Deployment) {}
   rpc GetDeployment(GetDeploymentDto) returns (Deployment) {}
+  rpc GetDeploymentsByUserId(GetDeploymentByUserIdDto) returns (Deployments) {}
+  rpc StopDeployment(GetDeploymentDto) returns (Deployment) {}
+  rpc DeleteDeployment(GetDeploymentDto) returns (Deployment) {}
+  rpc RetryDeployment(GetDeploymentDto) returns (Deployment) {}
+  rpc RollbackDeployment(GetDeploymentDto) returns (Deployment) {}
+  rpc UpdateDeployment(UpdateDeploymentDto) returns (Deployment) {}
 }
 
-message CreateStaticSiteDto {
-  string url = 2;
-  string userId = 3;
-  optional string outDir = 4;
-  string runCommand = 5;
-  optional string buildCommand = 6;
-  map<string,string> envs = 8;
+message ImageData {
+  string imageUrl = 1;
+  string instanceType = 2;
+  string accessToken = 3;
 }
 
-message CreateWebServiceDto {
-  string url = 2;
-  string userId = 3;
-  optional string outDir = 4;
-  string runCommand = 5;
-  optional string buildCommand = 6;
-  string instanceType = 7;
-  map<string,string> envs = 8;
+message WebServiceData {
+  string repoUrl = 1;
+  string instanceType = 2;
+  string runCommand = 3;
+  string buildCommand = 4;
+  string accessToken = 5;
 }
 
-message CreateImageDeploymentDto {
-  string url = 2;
-  string userId = 3;
-  optional string outDir = 4;
-  string runCommand = 5;
-  optional string buildCommand = 6;
-  string instanceType = 7;
+message StaticSiteData {
+  string repoUrl = 1;
+  string outDir = 2;
+  string buildCommand = 3;
+  string accessToken = 4;
 
 }
 
+message GetDeploymentByUserIdDto {
+  string userId = 1;
+}
+
+message UpdateDeploymentDto {
+  string id = 1;
+  Updates updates = 2;
+
+}
+
+message Updates {
+ string repoName = 1;
+  string outDir = 2;
+  string runCommand = 3;
+  string buildCommand = 4;
+  string instanceType = 5;
+}
+
+message CreateDeploymentDto {
+  optional string deploymentName = 2;
+  string userId = 4;
+  DeploymentType deploymentType = 8;
+  oneof type {
+    ImageData imageData = 9;
+    WebServiceData webServiceData = 10;
+    StaticSiteData staticSiteData = 11;
+  }
+}
+
+message Deployments {
+  repeated Deployment deployments = 1;
+}
 message GetDeploymentDto { string id = 1; }
+
+
+enum DeploymentType {
+  webService = 0;
+  staticSite = 1;
+  dockerImage = 2;
+}
+
+enum InstanceType{
+  tier_0 = 0;
+  tier_1 = 1;
+  tier_2 = 2;
+}

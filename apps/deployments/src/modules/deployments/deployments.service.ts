@@ -57,6 +57,10 @@ export class DeploymentsService {
     return this.deplRepository.updateDeplUrl(deplId, url);
   }
 
+  getUsersDeployments(userId: string) {
+    return this.deplRepository.getDeploymentsByUserId(userId);
+  }
+
   getDeployment(deplId: string): Promise<Deployment> {
     return this.deplRepository.getDeployment(deplId);
   }

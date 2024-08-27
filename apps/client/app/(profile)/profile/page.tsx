@@ -24,7 +24,11 @@ export default async function Profile() {
         </h1>
         <div className="grid gap-6 grid-cols-5 w-full h-auto items-start">
           <div className="col-span-3 h-auto row-span-2">
-            <PersonalInfoCard email={user.email} fullname={user.fullname} />
+            <PersonalInfoCard
+              email={user?.email}
+              fullname={user?.fullname}
+              githubId={user?.githubId}
+            />
           </div>
           <div className="col-span-2 row-span-3">
             <UpdatePasswordCard email={user.email} />
@@ -36,50 +40,6 @@ export default async function Profile() {
                 Edit your billing account details
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="grid gap-6">
-                <div className="grid gap-3">
-                  <Label htmlFor="password">New Password</Label>
-                  <Input id="password" type="password" className="w-full" />
-                </div>
-                <div className="grid gap-3">
-                  <Label htmlFor="confirm-password">Confirm New Password</Label>
-                  <Input
-                    id="confirm-password"
-                    type="password"
-                    className="w-full"
-                  />
-                </div>
-                <div className="grid gap-3">
-                  <Label htmlFor="otp">Otp</Label>
-                  <Input id="otp" type="number" className="w-full" />
-                </div>
-              </div>
-            </CardContent>
-            <CardFooter>
-              <Button size="sm" disabled>
-                Update Password
-              </Button>
-            </CardFooter>
-          </Card>
-          <Card className="col-span-2 row-span-1">
-            <CardHeader>
-              <CardTitle>Github</CardTitle>
-              <CardDescription>Edit your github account</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-6">
-                <div className="grid gap-3">
-                  <Label htmlFor="password">Github Account</Label>
-                  <Input id="password" type="password" className="w-full" />
-                </div>
-              </div>
-            </CardContent>
-            <CardFooter>
-              <Button size="sm" disabled>
-                Update Password
-              </Button>
-            </CardFooter>
           </Card>
         </div>
       </div>

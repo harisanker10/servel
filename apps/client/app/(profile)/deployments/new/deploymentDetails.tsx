@@ -34,9 +34,9 @@ export function DeploymentDetails({
               <Input
                 id="git-url"
                 placeholder="https://github.com/username/repo.git"
-                name="gitUrl"
+                name="url"
                 onChange={handleOnChange}
-                value={values["gitUrl"] || ""}
+                value={values["url"] || ""}
               />
               <Button variant="outline">Select</Button>
             </div>
@@ -70,8 +70,8 @@ export function DeploymentDetails({
             <Input
               id="start-command"
               placeholder="npm start"
-              name="startCommand"
-              value={values["startCommand"] || ""}
+              name="runCommand"
+              value={values["runCommand"] || ""}
               onChange={handleOnChange}
             />
           </div>

@@ -18,21 +18,21 @@ export function InstanceTypeSelectCard({
   const tiers = [
     {
       title: "Free",
-      value: "tier-0",
+      value: "tier_0",
       price: "$0/month",
       ram: "512 MB",
       cpu: "0.1 CPU",
     },
     {
       title: "Starter",
-      value: "tier-1",
+      value: "tier_1",
       price: "$5/month",
       ram: "512 MB",
       cpu: "0.5 CPU",
     },
     {
       title: "Standard",
-      value: "tier-2",
+      value: "tier_2",
       price: "$20/month",
       ram: "2 GB",
       cpu: "1 CPU",

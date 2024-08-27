@@ -3,7 +3,7 @@ import { AppModule } from './app.module';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { join } from 'path';
 
-const protoPath = join(__dirname, './users.proto');
+const protoPath = join(__dirname, '../proto/users.proto');
 console.log({ protoPath });
 
 async function bootstrap() {

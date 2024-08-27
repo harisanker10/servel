@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -14,47 +14,23 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
+import { getUsersDeployments } from "@/actions/deployments/getUserDeployments";
 
 export default function DeploymentsPage() {
   const [repoUrl, setRepoUrl] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
-  const [deployments, setDeployments] = useState([
-    {
-      id: "dep-1",
-      repo: "my-app",
-      status: "Deployed",
-      url: "https://my-app.vercel.app",
-      createdAt: "2023-06-15",
-    },
-    {
-      id: "dep-2",
-      repo: "portfolio-site",
-      status: "Pending",
-      url: null,
-      createdAt: "2023-05-30",
-    },
-    {
-      id: "dep-3",
-      repo: "blog",
-      status: "Failed",
-      url: null,
-      createdAt: "2023-04-20",
-    },
-  ]);
-  const [repos, setRepos] = useState([
-    { id: "repo-1", name: "my-app", lastUpdated: "2023-06-14" },
-    { id: "repo-2", name: "portfolio-site", lastUpdated: "2023-05-29" },
-    { id: "repo-3", name: "blog", lastUpdated: "2023-04-19" },
-    { id: "repo-4", name: "e-commerce", lastUpdated: "2023-03-10" },
-    { id: "repo-5", name: "chat-app", lastUpdated: "2023-02-28" },
-  ]);
-  const filteredRepos = repos.filter((repo) =>
-    repo.name.toLowerCase().includes(searchQuery.toLowerCase()),
-  );
-  const handleDeployRepo = () => {
-    console.log("Deploying repo:", repoUrl);
-  };
+  const [deployments, setDeployments] = useState([]);
 
+  useEffect(() => {
+    (async () => {
+      const depls = await getUsersDeployments();
+      if(depls && depls?.length > 0){
+      setDeployments(depls);
+      console.log(depls);
+      console.log({ deployments });
+      }
+    })();
+  }, []);
 
   return (
     <div className="flex  flex-col  mx-auto w-3/4 gap-8 p-6 sm:p-10">
@@ -90,17 +66,17 @@ export default function DeploymentsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {deployments.map((deployment) => (
-                  <TableRow key={deployment.id}>
+                {deployments.map((deployment: any) => (
+                  <TableRow key={deployment?.id}>
                     <TableCell className="font-medium">
-                      {deployment.repo}
+                      {deployment?.repoName}
                     </TableCell>
                     <TableCell>
                       <Badge
                         variant={
-                          deployment.status === "Deployed"
+                          deployment.status === "deployed"
                             ? "success"
-                            : deployment.status === "Pending"
+                            : deployment.status === "building"
                               ? "warning"
                               : "danger"
                         }
@@ -109,9 +85,9 @@ export default function DeploymentsPage() {
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      {deployment.url ? (
-                        <Link href="#" target="_blank" prefetch={false}>
-                          {deployment.url}
+                      {deployment.deploymentUrl ? (
+                        <Link href={deployment.deploymentUrl} prefetch={true}>
+                          {deployment.deploymentUrl}
                         </Link>
                       ) : (
                         "-"
@@ -138,20 +114,22 @@ export default function DeploymentsPage() {
               />
             </div>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-              {filteredRepos.map((repo) => (
-                <div
-                  key={repo.id}
-                  className="flex flex-col items-start gap-2 rounded-lg border p-4 shadow-sm"
-                >
-                  <div className="text-lg font-medium">{repo.name}</div>
-                  <div className="text-sm text-muted-foreground">
-                    Last updated: {repo.lastUpdated}
-                  </div>
-                  <Button variant="outline" size="sm">
-                    Deploy
-                  </Button>
-                </div>
-              ))}
+              {
+                //   filteredRepos.map((repo) => (
+                //   <div
+                //     key={repo.id}
+                //     className="flex flex-col items-start gap-2 rounded-lg border p-4 shadow-sm"
+                //   >
+                //     <div className="text-lg font-medium">{repo.name}</div>
+                //     <div className="text-sm text-muted-foreground">
+                //       Last updated: {repo.lastUpdated}
+                //     </div>
+                //     <Button variant="outline" size="sm">
+                //       Deploy
+                //     </Button>
+                //   </div>
+                // ))
+              }
             </div>
           </CardContent>
         </Card>

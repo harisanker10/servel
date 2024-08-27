@@ -103,6 +103,11 @@ export class AuthController implements OnModuleInit {
     return { exist: false };
   }
 
+  // @Patch('/')
+  // async updateFullname(@Req() req, @Body body: { fullname: string }) {
+  //   this.authService.updateFullname(req.user.id, body.fullname);
+  // }
+
   @Get('google')
   @UseGuards(GoogleAuthGuard)
   loginGoogle() {}
@@ -144,14 +149,15 @@ export class AuthController implements OnModuleInit {
     }
 
     //@ts-expect-error token undefined
+    if (error) {
+      res.send(
+        `<script>window.opener.postMessage('${JSON.stringify({ error })}', 'http://localhost:3000')</script>`,
+      );
+    }
+    //@ts-expect-error token undefined
     if (user && token) {
       res.send(
         `<script>window.opener.postMessage('${JSON.stringify({ user, token })}', 'http://localhost:3000')</script>`,
-      );
-    } else {
-      res.send(
-        //@ts-expect-error token undefined
-        `<script>window.opener.postMessage('${JSON.stringify({ error })}', 'http://localhost:3000')</script>`,
       );
     }
   }

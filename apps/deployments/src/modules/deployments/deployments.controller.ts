@@ -7,13 +7,14 @@ import {
   CreateStaticSiteDto,
   CreateWebServiceDto,
   Deployment,
+  Deployments,
   DeploymentsServiceController,
   DeploymentsServiceControllerMethods,
   GetDeploymentDto,
+  GetUsersDeploymentsDto,
   InstanceType,
 } from '@servel/dto';
 import { Observable } from 'rxjs';
-import { getReponame } from 'src/utils/getReponame';
 
 @Controller()
 @DeploymentsServiceControllerMethods()
@@ -38,6 +39,7 @@ export class DeploymentsController implements DeploymentsServiceController {
   }
 
   async createWebService(depl: CreateWebServiceDto): Promise<Deployment> {
+    console.log({ depl });
     const savedDepl = await this.deplService.createWebService(depl);
     console.log({ savedDepl });
 
@@ -68,4 +70,14 @@ export class DeploymentsController implements DeploymentsServiceController {
     }
     return depl;
   }
+
+  async getUsersDeployments(
+    request: GetUsersDeploymentsDto,
+  ): Promise<Deployments> {
+    return {
+      deployments: await this.deplService.getUsersDeployments(request.userId),
+    };
+  }
+
+  async stopDeployment({ id }: GetDeploymentDto) {}
 }

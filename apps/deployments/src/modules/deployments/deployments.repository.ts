@@ -38,6 +38,10 @@ export class DeploymentsRepository {
     return data;
   }
 
+  async getDeploymentsByUserId(userId: string) {
+    return this.deplModel.find({ userId });
+  }
+
   async getDeployment(id: string) {
     return await this.deplModel
       .findOne({ _id: id })

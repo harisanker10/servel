@@ -1,14 +1,29 @@
 "use server";
 
 import { $api } from "@/http";
-import { CreateWebServiceDto, createWebServiceSchema } from "@servel/dto";
+
+export interface CreateWebServiceDto {
+  url: string;
+  userId: string;
+  outDir?: string | undefined;
+  runCommand: string;
+  buildCommand?: string | undefined;
+  instanceType: string;
+  envs: {
+    [key: string]: string;
+  };
+}
 
 export async function createDeployment(webService: CreateWebServiceDto) {
-  const parsed = createWebServiceSchema.safeParse(webService);
-  if (!parsed.success) {
-    return { error: "validation error" };
-  }
+  console.log({ webService });
+  // const parsed = createWebServiceSchema.safeParse(webService);
+  // if (!parsed.success) {
+  //   console.log(parsed.error);
+  //   return { error: "validation error" };
+  // }
   const res = await $api
     .post("/deployments", webService)
     .then((res) => res.data);
+
+  console.log({ res });
 }

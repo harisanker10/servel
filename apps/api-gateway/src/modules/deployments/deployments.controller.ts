@@ -1,10 +1,12 @@
 import {
   Body,
   Controller,
+  Get,
   Inject,
   OnModuleInit,
   Param,
   Post,
+  Req,
   UseGuards,
   UsePipes,
 } from '@nestjs/common';
@@ -18,6 +20,7 @@ import {
 } from '@servel/dto';
 import { lastValueFrom } from 'rxjs';
 import { JWTGuard } from '../auth/guards/jwt.guard';
+import { Request } from 'express';
 
 @Controller('/deployments')
 @UseGuards(JWTGuard)
@@ -32,16 +35,31 @@ export class DeploymentsController implements OnModuleInit {
   }
 
   @Post('/')
-  @UsePipes(new ZodValidationPipe(createWebServiceSchema))
-  async createDeployment(@Body() depl: CreateWebServiceDto) {
+  async createDeployment(@Req() req: any, @Body() depl: any) {
+    console.log({ depl });
+
+    const deployemnt = {
+      userId: req.user.id,
+      ...depl,
+    };
+
+    console.log({ deployemnt });
+
     const webService = await lastValueFrom(
-      this.deploymentsGrpcService.createWebService(depl),
+      this.deploymentsGrpcService.createWebService(deployemnt),
     );
     return webService;
   }
 
+  @Get('/')
+  async getDeploymentsOfUser(@Req() req: Request & { user: { id: string } }) {
+    return this.deploymentsGrpcService.getUsersDeployments({
+      userId: req?.user?.id,
+    });
+  }
+
   @Get('/:id')
-  async getDeployment(@Param('id') id){
-    const 
+  async getDeployment(@Param('id') id) {
+    return this.deploymentsGrpcService.getDeployment({ id });
   }
 }
