@@ -7,41 +7,54 @@
 /* eslint-disable */
 import { GrpcMethod, GrpcStreamMethod } from "@nestjs/microservices";
 import { Observable } from "rxjs";
+import { DeploymentType, InstanceType } from "..";
 
 export const protobufPackage = "deployments";
 
-export enum DeploymentType {
-  webService = 0,
-  staticSite = 1,
-  dockerImage = 2,
-  UNRECOGNIZED = -1,
-}
-
-export enum InstanceType {
-  tier_0 = 0,
-  tier_1 = 1,
-  tier_2 = 2,
-  UNRECOGNIZED = -1,
-}
-
 export interface Deployment {
   id: string;
-  deploymentName: string;
-  status: string;
-  userId: string;
   createdAt: number;
   updatedAt: number;
-  deploymentUrl: string;
-  deploymentType: DeploymentType;
+  status: string;
   imageData?: ImageData | undefined;
   webServiceData?: WebServiceData | undefined;
   staticSiteData?: StaticSiteData | undefined;
+}
+
+export interface UserId {
+  userId: string;
+}
+
+export interface Project {
+  id: string;
+  name: string;
+  status: string;
+  createdAt: number;
+  updatedAt: number;
+  deploymentUrl: string;
+  type: DeploymentType;
+  deployments: Deployment[];
+}
+
+export interface Projects {
+  projects: Project[];
+}
+
+export interface ImageDeployments {
+  imageDeployments: ImageData[];
 }
 
 export interface ImageData {
   imageUrl: string;
   instanceType: string;
   accessToken: string;
+  env: { [key: string]: string };
+  port: number;
+}
+
+export interface ImageData_EnvEntry {
+  key: string;
+  value: string;
 }
 
 export interface WebServiceData {
@@ -50,6 +63,15 @@ export interface WebServiceData {
   runCommand: string;
   buildCommand: string;
   accessToken: string;
+  branch: string;
+  commitId: string;
+  env: { [key: string]: string };
+  port: number;
+}
+
+export interface WebServiceData_EnvEntry {
+  key: string;
+  value: string;
 }
 
 export interface StaticSiteData {
@@ -57,6 +79,14 @@ export interface StaticSiteData {
   outDir: string;
   buildCommand: string;
   accessToken: string;
+  branch: string;
+  commitId: string;
+  env: { [key: string]: string };
+}
+
+export interface StaticSiteData_EnvEntry {
+  key: string;
+  value: string;
 }
 
 export interface GetDeploymentByUserIdDto {
@@ -69,17 +99,19 @@ export interface UpdateDeploymentDto {
 }
 
 export interface Updates {
-  repoName: string;
-  outDir: string;
-  runCommand: string;
-  buildCommand: string;
-  instanceType: string;
+  repoName?: string | undefined;
+  userId: string;
+  imageData?: ImageData | undefined;
+  webServiceData?: WebServiceData | undefined;
+  staticSiteData?: StaticSiteData | undefined;
 }
 
 export interface CreateDeploymentDto {
   deploymentName?: string | undefined;
   userId: string;
+  instanceType: InstanceType;
   deploymentType: DeploymentType;
+  env: string;
   imageData?: ImageData | undefined;
   webServiceData?: WebServiceData | undefined;
   staticSiteData?: StaticSiteData | undefined;
@@ -96,11 +128,11 @@ export interface GetDeploymentDto {
 export const DEPLOYMENTS_PACKAGE_NAME = "deployments";
 
 export interface DeploymentsServiceClient {
-  createDeployment(request: CreateDeploymentDto): Observable<Deployment>;
+  getAllProjects(request: UserId): Observable<Project>;
 
-  getDeployment(request: GetDeploymentDto): Observable<Deployment>;
+  createDeployment(request: CreateDeploymentDto): Observable<Projects>;
 
-  getDeploymentsByUserId(request: GetDeploymentByUserIdDto): Observable<Deployments>;
+  getDeployments(request: GetDeploymentDto): Observable<Deployments>;
 
   stopDeployment(request: GetDeploymentDto): Observable<Deployment>;
 
@@ -110,49 +142,77 @@ export interface DeploymentsServiceClient {
 
   rollbackDeployment(request: GetDeploymentDto): Observable<Deployment>;
 
-  updateDeployment(request: UpdateDeploymentDto): Observable<Deployment>;
+  updateAndRedeploy(request: UpdateDeploymentDto): Observable<Deployment>;
 }
 
 export interface DeploymentsServiceController {
-  createDeployment(request: CreateDeploymentDto): Promise<Deployment> | Observable<Deployment> | Deployment;
+  getAllProjects(
+    request: UserId,
+  ): Promise<Project> | Observable<Project> | Project;
 
-  getDeployment(request: GetDeploymentDto): Promise<Deployment> | Observable<Deployment> | Deployment;
+  createDeployment(
+    request: CreateDeploymentDto,
+  ): Promise<Projects> | Observable<Projects> | Projects;
 
-  getDeploymentsByUserId(
-    request: GetDeploymentByUserIdDto,
+  getDeployments(
+    request: GetDeploymentDto,
   ): Promise<Deployments> | Observable<Deployments> | Deployments;
 
-  stopDeployment(request: GetDeploymentDto): Promise<Deployment> | Observable<Deployment> | Deployment;
+  stopDeployment(
+    request: GetDeploymentDto,
+  ): Promise<Deployment> | Observable<Deployment> | Deployment;
 
-  deleteDeployment(request: GetDeploymentDto): Promise<Deployment> | Observable<Deployment> | Deployment;
+  deleteDeployment(
+    request: GetDeploymentDto,
+  ): Promise<Deployment> | Observable<Deployment> | Deployment;
 
-  retryDeployment(request: GetDeploymentDto): Promise<Deployment> | Observable<Deployment> | Deployment;
+  retryDeployment(
+    request: GetDeploymentDto,
+  ): Promise<Deployment> | Observable<Deployment> | Deployment;
 
-  rollbackDeployment(request: GetDeploymentDto): Promise<Deployment> | Observable<Deployment> | Deployment;
+  rollbackDeployment(
+    request: GetDeploymentDto,
+  ): Promise<Deployment> | Observable<Deployment> | Deployment;
 
-  updateDeployment(request: UpdateDeploymentDto): Promise<Deployment> | Observable<Deployment> | Deployment;
+  updateAndRedeploy(
+    request: UpdateDeploymentDto,
+  ): Promise<Deployment> | Observable<Deployment> | Deployment;
 }
 
 export function DeploymentsServiceControllerMethods() {
   return function (constructor: Function) {
     const grpcMethods: string[] = [
+      "getAllProjects",
       "createDeployment",
-      "getDeployment",
-      "getDeploymentsByUserId",
+      "getDeployments",
       "stopDeployment",
       "deleteDeployment",
       "retryDeployment",
       "rollbackDeployment",
-      "updateDeployment",
+      "updateAndRedeploy",
     ];
     for (const method of grpcMethods) {
-      const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);
-      GrpcMethod("DeploymentsService", method)(constructor.prototype[method], method, descriptor);
+      const descriptor: any = Reflect.getOwnPropertyDescriptor(
+        constructor.prototype,
+        method,
+      );
+      GrpcMethod("DeploymentsService", method)(
+        constructor.prototype[method],
+        method,
+        descriptor,
+      );
     }
     const grpcStreamMethods: string[] = [];
     for (const method of grpcStreamMethods) {
-      const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);
-      GrpcStreamMethod("DeploymentsService", method)(constructor.prototype[method], method, descriptor);
+      const descriptor: any = Reflect.getOwnPropertyDescriptor(
+        constructor.prototype,
+        method,
+      );
+      GrpcStreamMethod("DeploymentsService", method)(
+        constructor.prototype[method],
+        method,
+        descriptor,
+      );
     }
   };
 }

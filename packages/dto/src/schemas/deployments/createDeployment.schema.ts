@@ -7,9 +7,5 @@ export const createWebServiceSchema = z.object({
   outDir: z.string().optional(),
   runCommand: z.string(),
   buildCommand: z.string().optional(),
-  instanceType: z.enum([
-    InstanceType.tier_0,
-    InstanceType.tier_1,
-    InstanceType.tier_2,
-  ]),
+  instanceType: z.number().min(0).max(2),
 });

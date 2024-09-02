@@ -5,36 +5,57 @@ package deployments;
 
 message Deployment {
   string id = 1;
-  string deploymentName = 2;
-  string status = 3;
-  string userId = 4;
-  int32 createdAt = 5;
-  int32 updatedAt = 6;
-  string deploymentUrl = 7;
-  DeploymentType deploymentType = 8;
+  int32 createdAt = 2;
+  int32 updatedAt = 3;
+  string status = 4;
   oneof type {
-    ImageData imageData = 9;
-    WebServiceData webServiceData = 10;
-    StaticSiteData staticSiteData = 11;
+    ImageData imageData = 5;
+    WebServiceData webServiceData = 6;
+    StaticSiteData staticSiteData = 7;
   }
 }
 
 
 service DeploymentsService {
-  rpc CreateDeployment(CreateDeploymentDto) returns (Deployment) {}
-  rpc GetDeployment(GetDeploymentDto) returns (Deployment) {}
-  rpc GetDeploymentsByUserId(GetDeploymentByUserIdDto) returns (Deployments) {}
+  rpc GetAllProjects(UserId) returns (Project) {}
+  rpc CreateDeployment(CreateDeploymentDto) returns (Projects) {}
+  rpc GetDeployments(GetDeploymentDto) returns (Deployments) {}
   rpc StopDeployment(GetDeploymentDto) returns (Deployment) {}
   rpc DeleteDeployment(GetDeploymentDto) returns (Deployment) {}
   rpc RetryDeployment(GetDeploymentDto) returns (Deployment) {}
   rpc RollbackDeployment(GetDeploymentDto) returns (Deployment) {}
-  rpc UpdateDeployment(UpdateDeploymentDto) returns (Deployment) {}
+  rpc UpdateAndRedeploy(UpdateDeploymentDto) returns (Deployment) {}
+}
+
+message UserId {
+  string userId = 1;
+}
+
+message Project {
+  string id = 1;
+  string name = 2;
+  string status = 3;
+  int32 createdAt = 5;
+  int32 updatedAt = 6;
+  string deploymentUrl = 7;
+  DeploymentType type = 8;
+  repeated Deployment deployments = 9;
+}
+
+message Projects {
+  repeated Project projects = 1;
+}
+
+message ImageDeployments {
+  repeated ImageData imageDeployments = 1;
 }
 
 message ImageData {
   string imageUrl = 1;
   string instanceType = 2;
   string accessToken = 3;
+  map<string,string> env = 4;
+  int32 port = 5;
 }
 
 message WebServiceData {
@@ -43,6 +64,10 @@ message WebServiceData {
   string runCommand = 3;
   string buildCommand = 4;
   string accessToken = 5;
+  string branch = 6;
+  string commitId = 7;
+  map<string,string> env = 8;
+  int32 port = 9;
 }
 
 message StaticSiteData {
@@ -50,7 +75,9 @@ message StaticSiteData {
   string outDir = 2;
   string buildCommand = 3;
   string accessToken = 4;
-
+  string branch = 5;
+  string commitId = 6;
+  map<string,string> env = 7;
 }
 
 message GetDeploymentByUserIdDto {
@@ -64,21 +91,25 @@ message UpdateDeploymentDto {
 }
 
 message Updates {
- string repoName = 1;
-  string outDir = 2;
-  string runCommand = 3;
-  string buildCommand = 4;
-  string instanceType = 5;
+  optional string repoName = 1;
+  string userId = 2;
+  oneof type {
+    ImageData imageData = 3;
+    WebServiceData webServiceData = 4;
+    StaticSiteData staticSiteData = 5;
+  }
 }
 
 message CreateDeploymentDto {
-  optional string deploymentName = 2;
-  string userId = 4;
-  DeploymentType deploymentType = 8;
+  optional string deploymentName = 1;
+  string userId = 2;
+  InstanceType instanceType = 3;  
+  DeploymentType deploymentType = 4;
+  string env = 5;
   oneof type {
-    ImageData imageData = 9;
-    WebServiceData webServiceData = 10;
-    StaticSiteData staticSiteData = 11;
+    ImageData imageData = 6;
+    WebServiceData webServiceData = 7;
+    StaticSiteData staticSiteData = 8;
   }
 }
 
@@ -94,7 +125,7 @@ enum DeploymentType {
   dockerImage = 2;
 }
 
-enum InstanceType{
+enum InstanceType {
   tier_0 = 0;
   tier_1 = 1;
   tier_2 = 2;

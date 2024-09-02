@@ -54,13 +54,15 @@ message QueryUserDto {
   optional int32 sort = 6;
 }
 message UpdateUserDto {
+  string id = 1;
+  Updates updates = 2;
+}
+
+message Updates {
   optional string email = 1;
   optional string password = 2;
-  optional string newPassword = 3;
-  optional string avatar = 4;
-  optional string githubId = 5;
-  optional bool isBlocked = 6;
-  optional bool isProMember = 7;
+  optional string avatar = 3;
+  optional string githubId = 4;
 }
 
 message FindOneUserDto {

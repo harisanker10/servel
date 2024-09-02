@@ -1,32 +1,14 @@
-export interface Deployment {
-  id: string;
-  repoName: string;
-  type: ServiceTypes;
-  repoUrl: string;
-  deploymentUrl: string;
-  outDir: string;
-  buildCommand: string;
-  runCommand: string;
-  instanceType: InstanceType;
-  status: DeploymentStatus;
-  userId: string;
-  version: number;
-  githubAccessToken: string;
-  port: number;
-  createdAt: number;
-  updatedAt: number;
-}
-
-export enum ServiceTypes {
-  WebService = "web-service",
-  StaticSite = "static-site",
-  Image = "image",
+export enum DeploymentType {
+  webService = 0,
+  staticSite = 1,
+  dockerImage = 2,
+  UNRECOGNIZED = -1,
 }
 
 export enum InstanceType {
-  tier_0 = "tier-0",
-  tier_1 = "tier-1",
-  tier_2 = "tier-2",
+  tier_0 = 0,
+  tier_1 = 1,
+  tier_2 = 2,
 }
 
 export enum DeploymentStatus {

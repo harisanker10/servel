@@ -22,8 +22,8 @@ export default function GoogleSignInBtn({
   const handleClick = () => {
     const popup = window.open(
       `${API_URL}/auth/google?intent=${intent}`,
-      "Auth", // window.name - если позднее вызвать window.open() с тем же именем, то браузеры (кроме IE) заменяют существующее окно на новое.
-      "width=500,height=500,status=yes,toolbar=no,menubar=no,location=no", // window.params
+      "Auth",
+      "width=500,height=500,status=yes,toolbar=no,menubar=no,location=no",
     );
 
     if (typeof window !== "undefined") {

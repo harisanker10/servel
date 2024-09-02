@@ -1,6 +1,8 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { DeploymentStatus, InstanceType, ServiceTypes } from '@servel/dto';
-import { HydratedDocument, InferRawDocType } from 'mongoose';
+import { HydratedDocument, InferRawDocType, Types } from 'mongoose';
+import { Env } from './env.schema';
+import { Deployment } from './deployment.schema';
 
 @Schema({
   collection: 'images',
@@ -16,19 +18,26 @@ import { HydratedDocument, InferRawDocType } from 'mongoose';
   },
 })
 export class Image {
+  @Prop({ type: Types.ObjectId, ref: 'Deployment' })
+  deploymentId: Deployment;
+
   @Prop({ required: true })
-  image: string;
+  imageUrl: string;
+
+  @Prop({ default: 0 })
+  version: number;
 
   @Prop({
+    enum: DeploymentStatus,
     default: DeploymentStatus.queued,
   })
-  status: Omit<DeploymentStatus, 'building'>;
+  status: DeploymentStatus;
 
   @Prop()
   port: number;
 
-  @Prop({ default: {} })
-  env: Record<string, string>;
+  @Prop({ type: Types.ObjectId, ref: 'Env' })
+  env: Env;
 }
 
 export const ImageSchema = SchemaFactory.createForClass(Image);
