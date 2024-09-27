@@ -1,6 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import * as session from 'express-session';
+import session from 'express-session';
 import { ZodFilter } from './filters/zodExceptionFilter';
 
 async function bootstrap() {

@@ -11,7 +11,7 @@ import {
   UserServiceController,
   UserServiceControllerMethods,
   Users,
-} from '@servel/dto';
+} from '@servel/proto/users';
 import { UsersService } from './users.service';
 import { ClientKafka, RpcException } from '@nestjs/microservices';
 import { UserControllerErrorHandler } from 'src/interceptors/user-controller-error-handler.interceptor';
@@ -58,8 +58,10 @@ export class UsersController implements UserServiceController {
   removeUser(request: FindOneUserDto): User | Promise<User> | Observable<User> {
     return new Observable();
   }
-  updateUser(request: UpdateUserDto): User | Promise<User> | Observable<User> {
-    return this.userService.updatePassword(request) as Promise<User>;
+  updateUser(body: UpdateUserDto): User | Promise<User> | Observable<User> {
+    throw new Error();
+    //@ts-ignore
+    // return this.userService.updateUser(body) as Promise<User>;
   }
   async findOneUser(userData: FindOneUserDto): Promise<User> {
     console.log('finding one user');

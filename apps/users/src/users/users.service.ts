@@ -4,9 +4,9 @@ import {
   CreateUserWithGithubDto,
   CreateUserWithGoogleDto,
   FindOneUserDto,
-} from '@servel/dto';
+  UpdateUserDto,
+} from '@servel/proto/users';
 import { UserRepository } from './users.repository';
-import { UpdateUserDto } from '@servel/dto';
 
 @Injectable()
 export class UsersService {
@@ -33,8 +33,9 @@ export class UsersService {
     return this.userRepository.createUserWithCredentials(user);
   }
 
-  updatePassword(user: UpdateUserDto) {
-    return this.userRepository.updatePassword(user.email, user.password);
+  updateUser(user: UpdateUserDto) {
+    //@ts-ignore
+    return this.userRepository.updateUser(user.id, user.updates);
   }
 
   async findOne(user: FindOneUserDto) {

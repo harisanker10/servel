@@ -28,12 +28,14 @@ import {
   ResetPasswordDto,
   SignupRequestDto,
   SignupResponseDto,
-  USER_SERVICE_NAME,
-  User,
-  UserServiceClient,
   resetPasswordSchema,
   signupAuthSchema,
 } from '@servel/dto';
+import {
+  USER_SERVICE_NAME,
+  User,
+  UserServiceClient,
+} from '@servel/proto/users';
 import { GoogleAuthGuard } from './guards/googleAuth.guard';
 import { OtpGuard } from './guards/otp.guard';
 import { AuthService } from './auth.service';

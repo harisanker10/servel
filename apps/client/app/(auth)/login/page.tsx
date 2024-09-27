@@ -11,6 +11,7 @@ import { getServerActionErrors } from "@/lib/utils/getServerActionErrors";
 import { login } from "@/actions/auth/login";
 import GoogleSignInBtn from "@/components/oAuthButtons/googleSignUp";
 import GithubSignInBtn from "@/components/oAuthButtons/githubSignInBtn";
+import { PasswordInput } from "@/components/password-input";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -66,7 +67,7 @@ export default function LoginPage() {
               </Button>
             </Link>
           </div>
-          <Input
+          <PasswordInput
             id="password"
             type="password"
             name="password"

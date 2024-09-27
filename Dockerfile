@@ -1,25 +1,23 @@
 FROM node:alpine AS base
 RUN npm install pnpm -g
-
-FROM base AS build
-COPY . /usr/src/app
-WORKDIR /usr/src/app
+WORKDIR /app
+COPY ./packages ./packages
+COPY ./pnpm*.yaml ./
+COPY ./package.json ./
+COPY ./turbo.json ./
 RUN pnpm install
 
-FROM build AS api-gateway
-WORKDIR /usr/src/app/apps/api-gateway/
-RUN pnpm run build
-EXPOSE 3001
-CMD ["pnpm","run","start:prod"]
-
-FROM build AS users
-WORKDIR /usr/src/app/apps/api-gateway/
-RUN pnpm run build
-EXPOSE 3001
-CMD ["pnpm","run","start:prod"]
-
-# FROM build AS api-gateway
-# WORKDIR /usr/src/app/apps/api-gateway/
+# FROM base AS api-gateway
+# COPY ./pnpm*.yaml ./package.json ./turbo.json ./.turbo ./
+# COPY ./apps/api-gateway ./apps/api-gateway/
+# COPY ./packages/ ./packages/
+# RUN pnpm install
 # RUN pnpm run build
-# EXPOSE 3001
-# CMD ["pnpm","run","start:prod"]
+# CMD ["pnpm","run","dev"]
+
+FROM base as request-service
+WORKDIR /app/apps/request-service
+COPY ./apps/request-service/package.json ./apps/request-service/nest-cli.json ./
+RUN pnpm install
+COPY ./apps/request-service/ ./
+CMD ["pnpm", "run", "dev"]

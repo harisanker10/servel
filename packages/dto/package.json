@@ -9,7 +9,7 @@
   },
   "scripts": {
     "build": "tsc -b && tsc-alias",
-    "clean": "rm -rf node_modules dist"
+    "clean": "rm -rf node_modules dist && pnpm i"
   },
   "dependencies": {
     "@nestjs/common": "^10.0.0",

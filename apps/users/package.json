@@ -27,6 +27,7 @@
     "@nestjs/mongoose": "^10.0.10",
     "@nestjs/platform-express": "^10.0.0",
     "@servel/dto": "workspace:*",
+    "@servel/proto": "workspace:*",
     "kafkajs": "^2.2.4",
     "mongoose": "^8.5.1",
     "reflect-metadata": "^0.2.0",

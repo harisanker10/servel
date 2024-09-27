@@ -15,6 +15,7 @@ import { sendOtpEmail } from "@/actions/auth/sendOtpEmail";
 import { useToast } from "@/components/ui/use-toast";
 import Spinner from "@/components/spinner";
 import { resetPassword } from "@/actions/auth/resetPassword";
+import { PasswordInput } from "@/components/password-input";
 
 export function UpdatePasswordCard({ email }: { email: string }) {
   const [password, setPassword] = useState("");
@@ -104,9 +105,8 @@ export function UpdatePasswordCard({ email }: { email: string }) {
         <div className="grid gap-6">
           <div className="grid gap-3">
             <Label htmlFor="password">New Password</Label>
-            <Input
+            <PasswordInput
               id="password"
-              type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="w-full"
@@ -114,9 +114,8 @@ export function UpdatePasswordCard({ email }: { email: string }) {
           </div>
           <div className="grid gap-3">
             <Label htmlFor="confirm-password">Confirm New Password</Label>
-            <Input
+            <PasswordInput
               id="confirm-password"
-              type="password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               className="w-full"

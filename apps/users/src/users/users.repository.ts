@@ -6,7 +6,7 @@ import {
   CreateUserWithGithubDto,
   CreateUserWithGoogleDto,
   User,
-} from '@servel/dto';
+} from '@servel/proto/users';
 import { Logger } from '@nestjs/common';
 
 export class UserRepository {
@@ -52,6 +52,10 @@ export class UserRepository {
     })
       .save()
       .then((doc) => doc.toObject());
+  }
+
+  updateUser(userId: string, updates: Record<string, string>) {
+    return this.userModel.updateOne({ _id: userId }, updates);
   }
 
   async updatePassword(email: string, password: string) {

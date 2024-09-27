@@ -11,55 +11,51 @@ import {
   UsePipes,
 } from '@nestjs/common';
 import { ClientGrpc } from '@nestjs/microservices';
-import {
-  CreateWebServiceDto,
-  DEPLOYMENTS_SERVICE_NAME,
-  DeploymentsServiceClient,
-  ZodValidationPipe,
-  createWebServiceSchema,
-} from '@servel/dto';
-import { lastValueFrom } from 'rxjs';
+import { CreateDeploymentDto, createDeploymentSchema } from '@servel/dto';
 import { JWTGuard } from '../auth/guards/jwt.guard';
-import { Request } from 'express';
+import {
+  PROJECTS_SERVICE_NAME,
+  ProjectsServiceClient,
+} from '@servel/proto/projects';
+import { ZodPipe } from 'src/pipes/zodValidation.pipe';
+import { User } from 'src/utils/user.decorator';
+import { ReqUser } from 'types/JWTPayload';
 
 @Controller('/deployments')
 @UseGuards(JWTGuard)
 export class DeploymentsController implements OnModuleInit {
-  private deploymentsGrpcService: DeploymentsServiceClient;
-  constructor(@Inject('deployments') private client: ClientGrpc) {}
+  constructor(@Inject(PROJECTS_SERVICE_NAME) private client: ClientGrpc) {}
+  private projectsGrpcService: ProjectsServiceClient;
   onModuleInit() {
-    this.deploymentsGrpcService =
-      this.client.getService<DeploymentsServiceClient>(
-        DEPLOYMENTS_SERVICE_NAME,
-      );
+    this.projectsGrpcService = this.client.getService<ProjectsServiceClient>(
+      PROJECTS_SERVICE_NAME,
+    );
+  }
+
+  //TODO:
+  //   rpc UpdateInstanceType(UpdateInstanceTypeDto) returns (Project) {}
+  //   rpc StopDeployment(GetDeploymentDto) returns (Deployment) {}
+  //   rpc DeleteDeployment(GetDeploymentDto) returns (Deployment) {}
+
+  @Get('/:deploymentId')
+  async getProject(@User() user: ReqUser, @Param('deploymentId') deploymentId) {
+    return this.projectsGrpcService.getDeployment({ deploymentId });
   }
 
   @Post('/')
-  async createDeployment(@Req() req: any, @Body() depl: any) {
-    console.log({ depl });
-
-    const deployemnt = {
-      userId: req.user.id,
-      ...depl,
-    };
-
-    console.log({ deployemnt });
-
-    const webService = await lastValueFrom(
-      this.deploymentsGrpcService.createWebService(deployemnt),
-    );
-    return webService;
-  }
-
-  @Get('/')
-  async getDeploymentsOfUser(@Req() req: Request & { user: { id: string } }) {
-    return this.deploymentsGrpcService.getUsersDeployments({
-      userId: req?.user?.id,
+  @UsePipes(new ZodPipe(createDeploymentSchema))
+  async createDeployment(
+    @User() user: ReqUser,
+    @Body() body: CreateDeploymentDto,
+  ) {
+    return this.projectsGrpcService.createDeployment({
+      ...body,
+      userId: user.id,
     });
   }
 
-  @Get('/:id')
-  async getDeployment(@Param('id') id) {
-    return this.deploymentsGrpcService.getDeployment({ id });
+  @Post('/retry/:deploymentId')
+  async retryDeployment(@Param('deploymentId') deploymentId) {
+    return this.projectsGrpcService.retryDeployment({ deploymentId });
   }
 }

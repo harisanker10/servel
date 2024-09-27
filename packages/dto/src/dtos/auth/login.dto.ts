@@ -1,7 +1,6 @@
-import { User } from "src/proto";
 import { loginSchema } from "src/schemas";
 import { z } from "zod";
-import { ErrorResponse } from "../common";
+import { User } from "src/types";
 
 export type LoginRequestDto = z.infer<typeof loginSchema>;
 

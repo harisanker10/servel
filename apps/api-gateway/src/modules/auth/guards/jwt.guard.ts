@@ -21,14 +21,14 @@ export class JWTGuard implements CanActivate {
       request.headers['authorization'] || request.headers['Authorization'];
     if (typeof token !== 'string') return false;
     try {
-      const user = await this.jwtService.verifyAsync(token, {
-        secret: env.JWT_SECRET,
-      });
+      const user = await this.authService.getJWTPaylod(token);
       if (user && 'email' in user) {
-        const savedUser = await this.authService.getUser(user.email);
-        delete savedUser?.password;
-        if (savedUser) request.user = savedUser;
-        else throw new UnauthorizedException();
+        request.user = user;
+        // const savedUser = await this.authService.getUser(user.email);
+        // delete savedUser?.password;
+        // if (savedUser)
+        //   // request.user = { id: savedUser.id, email: savedUser.email };
+        // else throw new UnauthorizedException();
         return true;
       } else {
         throw new UnauthorizedException();

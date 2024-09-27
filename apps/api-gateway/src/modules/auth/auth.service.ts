@@ -4,10 +4,10 @@ import {
   CreateUserWithGoogleDto,
   USER_SERVICE_NAME,
   UserServiceClient,
-} from '@servel/dto';
+  CreateUserWithCredentialsDto,
+} from '@servel/proto/users';
 import { lastValueFrom } from 'rxjs';
 import * as bcrypt from 'bcrypt';
-import { CreateUserWithCredentialsDto } from '@servel/dto';
 import { MailerService } from 'src/mailer.service';
 import { OtpService } from 'src/utils/otp.service';
 import { JwtService } from '@nestjs/jwt';
@@ -64,10 +64,14 @@ export class AuthService implements OnModuleInit {
     return user;
   }
 
-  async resetPassword(email: string, password: string) {
+  async resetPassword(id: string, password: string) {
     const hashedPassword = await bcrypt.hash(password, 10);
+    // const newUser = await lastValueFrom(
+    //   this.userService.updateUser({ email, password: hashedPassword }),
+    // );
+
     const newUser = await lastValueFrom(
-      this.userService.updateUser({ email, password: hashedPassword }),
+      this.userService.updateUser({ id, updates: { password } }),
     );
     if (newUser.password === hashedPassword) return true;
     return false;
@@ -78,6 +82,10 @@ export class AuthService implements OnModuleInit {
       id,
       email,
     });
+  }
+
+  getJWTPaylod(token: string): Promise<{ email: string; id: string }> {
+    return this.jwtService.verifyAsync(token, {});
   }
 
   async verifyUser(email: string, password: string): Promise<boolean> {

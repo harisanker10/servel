@@ -1,0 +1,11 @@
+namespace: default
+
+requestService:
+  name: request-service
+  configMap: requestservice-config-map
+  dbName: request-service-mongodb
+
+var:
+  KAFKA_URL: kafka-release.default.svc.cluster.local:9092
+  KAFKA_USERNAME: username
+  KAFKA_PASSWORD: password
