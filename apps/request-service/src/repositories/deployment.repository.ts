@@ -15,9 +15,20 @@ export class DeploymentsRepository {
     clusterContainerName?: string | undefined;
     s3Path?: string | undefined;
   }) {
-    return new this.deploymentsModel({ ...createDeploymentDto })
-      .save()
-      //@ts-ignore
-      .then((doc) => doc.toObject() as DeploymentObject);
+    return (
+      new this.deploymentsModel({ ...createDeploymentDto })
+        .save()
+        //@ts-ignore
+        .then((doc) => doc?.toObject() as DeploymentObject)
+    );
+  }
+
+  async getDeployment(deploymentId: string) {
+    return (
+      this.deploymentsModel
+        .findOne({ deploymentId })
+        //@ts-ignore
+        .then((doc) => doc?.toObject() as DeploymentObject | undefined)
+    );
   }
 }

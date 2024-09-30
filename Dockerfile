@@ -21,3 +21,11 @@ COPY ./apps/request-service/package.json ./apps/request-service/nest-cli.json ./
 RUN pnpm install
 COPY ./apps/request-service/ ./
 CMD ["pnpm", "run", "dev"]
+
+FROM base as build-service
+WORKDIR /app/apps/build-service
+COPY ./apps/build-service/package.json ./apps/build-service/nest-cli.json ./
+RUN pnpm install
+COPY ./apps/build-service/ ./
+CMD ["pnpm", "run", "dev"]
+

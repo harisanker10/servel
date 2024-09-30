@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.name }}
+spec:
+  replicas: {{ .Values.replicas }}
+  selector:
+    matchLabels:
+      app: {{ .Values.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.name }}
+    spec:
+      containers:
+        - name: {{ .Values.name }}
+          image: {{ .Values.image}}
+          env: 
+            - name: DB_URL
+              value: {{ .Values.dbUrl }}
+            - name: KAFKA_URL
+              value: {{ .Values.global.kafka.url }}
+            - name: KAFKA_USERNAME
+              value: {{ .Values.global.kafka.username }}
+            - name: KAFKA_PASSWORD
+              value: {{ .Values.global.kafka.password }}
+            - name: S3_ACCESSKEYID
+              value: {{ .Values.global.s3ForBuilds.accessKeyId }}
+            - name: S3_REGION
+              value: {{ .Values.global.s3ForBuilds.region }}
+            - name: S3_SECRETACCESSKEY
+              value: {{ .Values.global.s3ForBuilds.secretAccessKey }}
+            - name: S3_BUCKET
+              value: {{ .Values.global.s3ForBuilds.bucket }}
+

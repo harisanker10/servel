@@ -45,6 +45,9 @@ export class Deployment {
 
   @Prop()
   s3Path?: string | undefined;
+
+  @Prop({ type: Number })
+  port?: number | string;
 }
 
 export interface DeploymentObject {
@@ -56,6 +59,7 @@ export interface DeploymentObject {
   clusterDeploymentName?: string | undefined;
   clusterContainerName?: string | undefined;
   s3Path?: string | undefined;
+  port?: string | undefined;
   createdAt: string;
   updatedAt: string;
 }

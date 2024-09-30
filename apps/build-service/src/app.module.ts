@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
-import { MongooseModule } from '@nestjs/mongoose';
+import { BuildModule } from './modules/build/build.module';
 import { ClientsModule, Transport } from '@nestjs/microservices';
-import { ProjectsModule } from './modules/projects/projects.module';
+import { KafkaModule } from './modules/kafka/kafka.module';
 import 'dotenv/config';
 
 const kafkaUrl = process.env.KAFKA_URL;
@@ -14,7 +14,7 @@ const kafkaModule = ClientsModule.register([
     transport: Transport.KAFKA,
     options: {
       client: {
-        clientId: 'projects',
+        clientId: 'build',
         brokers: [kafkaUrl],
         sasl: {
           mechanism: 'plain',
@@ -23,18 +23,14 @@ const kafkaModule = ClientsModule.register([
         },
       },
       consumer: {
-        groupId: 'projects-consumer',
+        groupId: 'build-consumer',
       },
     },
   },
 ]);
 
 @Module({
-  imports: [
-    kafkaModule,
-    ProjectsModule,
-    MongooseModule.forRoot('mongodb://localhost:27017/servel-depl'),
-  ],
+  imports: [kafkaModule, BuildModule, KafkaModule],
   controllers: [],
   providers: [],
   exports: [kafkaModule],

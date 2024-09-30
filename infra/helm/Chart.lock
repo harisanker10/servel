@@ -1,0 +1,12 @@
+dependencies:
+- name: request-service
+  repository: file://charts/request-service/
+  version: 0.1.0
+- name: build-service
+  repository: file://charts/build-service/
+  version: 0.1.0
+- name: kafka
+  repository: oci://registry-1.docker.io/bitnamicharts
+  version: 30.1.4
+digest: sha256:c12bb30462a07c7183ae4ac43be1fbf30195bb886e6e4ce55a8cf03c03c3bd37
+generated: "2024-09-29T19:52:57.783001175+05:30"

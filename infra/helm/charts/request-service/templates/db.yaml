@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.dbName }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Values.dbName }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.dbName }}
+    spec:
+      containers:
+        - name: {{ .Values.dbName }}
+          image: mongo:latest
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.dbName }}
+spec:
+  selector:
+    app: {{ .Values.dbName }}
+  type: ClusterIP
+  ports:
+    - name: db
+      protocol: TCP
+      port: 27017
+      targetPort: 27017
