@@ -2,7 +2,7 @@
 import { $api } from "@/http";
 import { setAccessToken } from "@/lib/session/setSession";
 import { redirect } from "next/navigation";
-import { ErrorResponse, SignupResponseDto } from "@servel/dto";
+import { ErrorResponse, SignupResponseDto } from "@servel/common";
 import { revalidatePath } from "next/cache";
 export async function signup(
   email: string,
@@ -32,17 +32,19 @@ export async function signup(
   //   body: JSON.stringify(body),
   // });
 
+  console.log({ body });
+
   return $api
     .post<SignupResponseDto>("/auth/signup", body)
     .then(({ data }: { data: SignupResponseDto }) => {
+      console.log({ data });
       if ("token" in data) {
         setAccessToken(data.token);
-        revalidatePath("/signup");
         redirect("/profile");
       }
     })
     .catch((err) => {
-      console.log("\n\nError\n\n");
+      console.log("\n\nError\n\n", err);
       return err?.response?.data;
     }) as Promise<SignupResponseDto | ErrorResponse>;
 }

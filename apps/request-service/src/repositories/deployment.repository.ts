@@ -8,13 +8,20 @@ export class DeploymentsRepository {
     private readonly deploymentsModel: Model<Deployment>,
   ) {}
 
-  async createDeployment(createDeploymentDto: {
-    deploymentId: string;
-    clusterServiceName?: string | undefined;
-    clusterDeploymentName?: string | undefined;
-    clusterContainerName?: string | undefined;
-    s3Path?: string | undefined;
-  }) {
+  async createDeployment(
+    createDeploymentDto: {
+      deploymentId: string;
+    } & (
+      | {
+          clusterServiceName: string;
+          clusterDeploymentName: string;
+          clusterContainerName: string;
+          port: number;
+        }
+      | { s3Path: string }
+    ),
+  ) {
+    console.log('creating new depl', { createDeploymentDto });
     return (
       new this.deploymentsModel({ ...createDeploymentDto })
         .save()

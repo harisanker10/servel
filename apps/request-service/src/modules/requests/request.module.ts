@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
@@ -6,6 +6,7 @@ import { Deployment, DeploymentSchema } from 'src/schemas/deployment.schema';
 import { RequestController } from './request.controller';
 import { DeploymentsRepository } from 'src/repositories/deployment.repository';
 import { S3 } from './s3.service';
+import { AppModule } from 'src/app.module';
 
 const kafkaUrl = process.env.KAFKA_URL;
 const kafkaUsername = process.env.KAFKA_USERNAME;
@@ -13,26 +14,7 @@ const kafkaPassword = process.env.KAFKA_PASSWORD;
 
 @Module({
   imports: [
-    ClientsModule.register([
-      {
-        name: 'build-service',
-        transport: Transport.KAFKA,
-        options: {
-          client: {
-            clientId: 'request-service',
-            brokers: [kafkaUrl],
-            sasl: {
-              mechanism: 'plain',
-              username: kafkaUsername,
-              password: kafkaPassword,
-            },
-          },
-          consumer: {
-            groupId: 'request-service-consumer',
-          },
-        },
-      },
-    ]),
+    forwardRef(() => AppModule),
     MongooseModule.forFeature([
       { name: Deployment.name, schema: DeploymentSchema },
     ]),

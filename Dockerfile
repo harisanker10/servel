@@ -23,9 +23,17 @@ COPY ./apps/request-service/ ./
 CMD ["pnpm", "run", "dev"]
 
 FROM base as build-service
+RUN apk add buildctl
+RUN apk add git
 WORKDIR /app/apps/build-service
 COPY ./apps/build-service/package.json ./apps/build-service/nest-cli.json ./
 RUN pnpm install
 COPY ./apps/build-service/ ./
 CMD ["pnpm", "run", "dev"]
 
+FROM base as projects-service
+WORKDIR /app/apps/projects
+COPY ./apps/projects/package.json ./apps/projects/nest-cli.json ./
+RUN pnpm install
+COPY ./apps/projects/ ./
+CMD ["pnpm", "run", "dev"]

@@ -7,7 +7,7 @@ export async function applyKubernetesConfiguration(
   imageName: string,
   serviceName: string,
   port: number,
-  nodePort: number,
+  env?: Record<string, string>,
 ) {
   console.log('applying k8 manifest');
   const kc = new k8s.KubeConfig();
@@ -26,7 +26,7 @@ export async function applyKubernetesConfiguration(
     imageName,
     serviceName,
     port,
-    nodePort,
+    env,
   );
 
   try {

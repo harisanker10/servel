@@ -27,6 +27,10 @@ export default function GoogleSignInBtn({
     );
 
     if (typeof window !== "undefined") {
+      popup &&
+        popup.addEventListener("close", () => {
+          setIsLoading(false);
+        });
       const handleMessage = (e: MessageEvent<any>) => {
         console.log("message", e.data);
         if (e.origin !== API_URL) return;
@@ -39,7 +43,6 @@ export default function GoogleSignInBtn({
           });
         } else {
           setAccessToken(userData.token);
-          router.push("/profile");
         }
         setIsLoading(false);
         popup?.close();
@@ -47,6 +50,13 @@ export default function GoogleSignInBtn({
       };
       window.addEventListener("message", handleMessage);
     }
+
+    const closeCheckInterval = setInterval(() => {
+      if (popup?.closed) {
+        setIsLoading(false);
+        clearInterval(closeCheckInterval);
+      }
+    }, 500);
 
     setIsLoading(true);
   };

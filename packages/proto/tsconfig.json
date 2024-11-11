@@ -1,28 +1,10 @@
 {
-    "compilerOptions": {
-        "module": "commonjs",
-        "declaration": true,
-        "removeComments": true,
-        "emitDecoratorMetadata": true,
-        "experimentalDecorators": true,
-        "allowSyntheticDefaultImports": true,
-        "target": "ES2016",
-        "sourceMap": true,
-        "outDir": "./dist",
-        "baseUrl": "./",
-         "paths": {
-      "./types/proto/*": ["./types/proto/*"]
-    },
-        "strict":true,
-        "incremental": true,
-        "skipLibCheck": true,
-        "strictNullChecks": true,
-        "noImplicitAny": false,
-        "strictBindCallApply": false,
-        "forceConsistentCasingInFileNames": false,
-        "noFallthroughCasesInSwitch": false,
-    },
-        "include":["./types/proto/*"]
-
+  "compilerOptions": {
+     "declaration": true,
+    "outDir": "./dist",
+    "rootDir": "./src",
+    // other options
+  },
+  "include": ["src"]
 }
 

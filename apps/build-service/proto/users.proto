@@ -10,52 +10,64 @@ message User {
   optional string avatar = 5;
   optional string githubId = 6;
   bool isBlocked = 7;
-  bool isProMember = 8;
-  int32 createdAt = 9;
-  int32 updatedAt = 10;
+  string createdAt = 9;
+  string updatedAt = 10;
   repeated string authType = 11;
+  optional AccessTokens accessTokens = 12;
+}
+
+message AccessTokens {
+  string accessToken = 1;
+  string refreshToken = 2;
+  string provider = 3;
 }
 
 service UserService {
-  rpc CreateUserWithCredentials(CreateUserWithCredentialsDto) returns (User) {}
-  rpc CreateUserWithGoogle(CreateUserWithGoogleDto) returns (User) {}
-  rpc CreateUserWithGithub(CreateUserWithGithubDto) returns (User) {}
-  rpc FindAllUsers(Empty) returns (stream Users) {}
+  rpc CreateUser(CreateUserDto) returns (User) {}
+
   rpc FindOneUser(FindOneUserDto) returns (User) {}
-  rpc RemoveUser(FindOneUserDto) returns (User) {}
+  rpc FindAllUsers(Empty) returns (stream Users) {}
   rpc QueryUsers(stream PaginationDto) returns (stream Users) {}
+
+  rpc RemoveUser(FindOneUserDto) returns (User) {}
+
   rpc UpdateUser(UpdateUserDto) returns (User) {}
 }
 
-message CreateUserWithGoogleDto {
+// message CreateUserWithGoogleDto {
+//   string email = 1;
+//   string avatar = 2;
+//   string fullname = 3;
+// }
+//
+// message CreateUserWithGithubDto {
+//   string email = 1;
+//   string avatar = 2;
+//   string fullname = 3;
+//   string githubId = 4;
+// }
+//
+message CreateUserDto {
   string email = 1;
-  string avatar = 2;
-  string fullname = 3;
-}
-
-message CreateUserWithGithubDto {
-  string email = 1;
-  string avatar = 2;
-  string fullname = 3;
-  string githubId = 4;
-}
-
-message CreateUserWithCredentialsDto {
-  string email = 1;
-  string password = 2;
+  optional string password = 2;
+  optional string avatar = 3;
+  optional string fullname = 4;
+  optional string githubId = 5;
+  AuthType authType = 6;
+  optional AccessTokens accessTokens = 7;
 }
 
 message QueryUserDto {
   optional string email = 1;
   optional string githubId = 2;
   optional bool isBlocked = 3;
-  optional bool isProMember = 4;
   optional int32 createdAt = 5;
   optional int32 sort = 6;
 }
 message UpdateUserDto {
-  string id = 1;
-  Updates updates = 2;
+  optional string id = 1;
+  optional string email = 2;
+  Updates updates = 3;
 }
 
 message Updates {
@@ -63,6 +75,7 @@ message Updates {
   optional string password = 2;
   optional string avatar = 3;
   optional string githubId = 4;
+  optional string fullname = 5;
 }
 
 message FindOneUserDto {
@@ -77,6 +90,12 @@ message PaginationDto {
   int32 page = 1;
   int32 skip = 2;
   QueryUserDto query = 3;
+}
+
+enum AuthType {
+  CREDENTIALS = 0;
+  GOOGLE = 1;
+  GITHUB = 2;
 }
 
 message Empty {}

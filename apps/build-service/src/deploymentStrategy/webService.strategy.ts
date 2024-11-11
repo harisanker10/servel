@@ -1,58 +1,46 @@
-import {
-  ImageData,
-  InstanceType,
-  ProjectType,
-  StaticSiteData,
-  WebServiceData,
-} from '@servel/dto';
+import { InstanceType, ProjectType, WebServiceData } from '@servel/common';
 import { DeploymentStrategy } from './IdeploymentStrategy';
-import { getReponame } from 'src/utils/getRepoName';
 import { Env } from 'src/types/env';
 import { BuildService } from 'src/modules/build/build.service';
+import { KafkaService } from 'src/modules/kafka/kafka.service';
 
 export class WebServiceDeployment extends DeploymentStrategy {
-  private readonly buildService: BuildService;
-  private imagePath: string | undefined;
+  private imageName: string | undefined;
   constructor(
+    private readonly buildService: BuildService,
+    private readonly kafkaService: KafkaService,
     deploymentId: string,
     data: WebServiceData,
     env?: Env | undefined,
   ) {
-    super(deploymentId, ProjectType.webService, data, env);
-    this.buildService = new BuildService();
+    super(deploymentId, ProjectType.WEB_SERVICE, data, env);
   }
 
   async build() {
-    const data = this.data as WebServiceData;
-    const builtData = await this.buildService.buildWebService({
+    const imageName = await this.buildService.createDockerImage({
+      data: this.getData(),
       deploymentId: this.deploymentId,
-      env: this.env,
-      port: data.port,
-      repoUrl: data.repoUrl,
-      repoName: getReponame(data.repoUrl),
-      runCommand: data.runCommand,
-      buildCommand: data.buildCommand,
-      instanceType: InstanceType.tier_0,
     });
-
-    if (builtData && builtData.image) {
-      this.imagePath = builtData.image;
-      return this.imagePath;
+    if (typeof imageName === 'string' && imageName.length > 0) {
+      this.imageName = imageName;
     }
   }
 
   async deploy(): Promise<any> {
-    if (this.imagePath) {
-      const deploydata = await this.buildService.runWebService(
-        this.imagePath,
-        this.deploymentId,
-        (this.data as WebServiceData).port,
-      );
-      console.log({ deploydata });
+    if (this.imageName) {
+      this.buildService.runImage({
+        deploymentId: this.deploymentId,
+        imageName: this.imageName,
+        port: this.getData().port,
+        envs: this.env?.values,
+        instanceType: InstanceType.TIER_0,
+      });
+    } else {
+      throw new Error('Image not created');
     }
   }
 
-  getData(): WebServiceData | ImageData | StaticSiteData {
-    return this.data;
+  getData(): WebServiceData {
+    return this.data as WebServiceData;
   }
 }

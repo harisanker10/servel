@@ -68,7 +68,7 @@ export function OtpInput({
             type="number"
             maxLength={1}
             onKeyDown={(e) => handleBackspace(e, i)}
-            className={`flex h-10 w-10 items-center bg-background rounded-md justify-center border border-gray-300 text-center`}
+            className={`flex h-10 w-10 appearance-none items-center bg-background rounded-md justify-center border border-gray-300 text-center`}
             onChange={(e) => handleOnChange(e, i)}
             ref={(el) => (ref.current[i] = el)}
           />

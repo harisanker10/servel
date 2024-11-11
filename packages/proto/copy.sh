@@ -10,5 +10,3 @@ do
     cp -r ./proto/*.proto "../../apps/$app/proto/"
   fi
 done
-
-cp ./types/* ../dto/src/proto/

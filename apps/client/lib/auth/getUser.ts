@@ -6,8 +6,11 @@ import { getCookie } from "../session/getSession";
 export async function getUser() {
   try {
     const token = await getCookie();
-    const response = await fetch(`${process.env.API_GATEWAY_URL}/auth/user`, {
-      cache: "force-cache",
+    // const user = await $api.get("/auth").then((data) => data?.data);
+    // if (user) return user;
+    console.log({ token });
+    const response = await fetch(`${process.env.API_GATEWAY_URL}/user`, {
+      cache: "no-cache",
       method: "GET",
       headers: {
         "Content-Type": "application/json",

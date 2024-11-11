@@ -1,4 +1,4 @@
-import { V1Deployment, V1Service } from '@kubernetes/client-node';
+import { V1Deployment, V1EnvVar, V1Service } from '@kubernetes/client-node';
 import { randomInt } from 'crypto';
 
 export function createKubernetesYaml(
@@ -7,8 +7,13 @@ export function createKubernetesYaml(
   imageName: string,
   serviceName: string,
   port: number,
-  nodePort: number,
+  env?: Record<string, string>,
 ): { deployment: V1Deployment; service: V1Service } {
+  const envs: V1EnvVar[] = [];
+  for (const key in env) {
+    envs.push({ name: key, value: env[key] });
+  }
+
   const deploymentYaml: V1Deployment = {
     apiVersion: 'apps/v1',
     kind: 'Deployment',
@@ -33,6 +38,7 @@ export function createKubernetesYaml(
             {
               name: containerName,
               image: imageName,
+              env: envs,
               ports: [
                 {
                   containerPort: port,
@@ -60,14 +66,12 @@ export function createKubernetesYaml(
       name: serviceName,
     },
     spec: {
-      type: 'NodePort',
+      type: 'ClusterIP',
       ports: [
         {
           port: port,
           targetPort: port,
           protocol: 'TCP',
-          name: deploymentName,
-          nodePort,
         },
       ],
       selector: {

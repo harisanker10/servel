@@ -1,19 +1,16 @@
 import { Controller } from '@nestjs/common';
-import { EventPattern } from '@nestjs/microservices';
-import { DeploymentUpdatesDto, KafkaTopics } from '@servel/dto';
-import { ProjectsService } from '../services/projects.service';
+import { EventPattern, Payload } from '@nestjs/microservices';
+import { DeploymentUpdatesDto, KafkaTopics } from '@servel/common';
+import { ProjectRepository } from 'src/repository/project.repository';
 
 @Controller()
 export class DeploymentsUpdatesController {
-  constructor(private readonly deplService: ProjectsService) {}
+  constructor(private readonly projectRepo: ProjectRepository) {}
 
   @EventPattern(KafkaTopics.deploymentUpdates)
-  updateDeployment(data: DeploymentUpdatesDto) {
+  updateDeployment(@Payload() data: DeploymentUpdatesDto) {
     console.log({ data });
-    // this.deplService.updateDeployment(
-    //   data.deploymentId,
-    //   data.version,
-    //   data.updates,
-    // );
+    //@ts-ignore
+    this.projectRepo.updateDeployment(data.deploymentId, data.updates);
   }
 }

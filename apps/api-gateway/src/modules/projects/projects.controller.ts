@@ -13,17 +13,18 @@ import {
   UsePipes,
 } from '@nestjs/common';
 import { ClientGrpc } from '@nestjs/microservices';
-import { ZodValidationPipe, createProjectSchema } from '@servel/dto';
+import {
+  ProjectType,
+  createProjectSchema,
+  CreateProjectDto,
+} from '@servel/common';
 import { lastValueFrom } from 'rxjs';
 import { JWTGuard } from '../auth/guards/jwt.guard';
-import { Request } from 'express';
 import {
-  CreateProjectDto,
   PROJECTS_SERVICE_NAME,
   ProjectsServiceClient,
 } from '@servel/proto/projects';
 import { ZodPipe } from 'src/pipes/zodValidation.pipe';
-import z from 'zod';
 import { User } from 'src/utils/user.decorator';
 import { ReqUser } from 'types/JWTPayload';
 
@@ -46,15 +47,30 @@ export class ProjectsController implements OnModuleInit {
   //   rpc DeleteEnvironment(GetEnvDto) returns (Env) {}
 
   @Post('/')
-  @UsePipes(new ZodPipe(createProjectSchema))
-  async createProject(@User() user: ReqUser, @Body() data: CreateProjectDto) {
-    const project = await lastValueFrom(
-      this.projectsGrpcService.createProject({
-        ...data,
+  // @UsePipes(new ZodPipe(createProjectSchema))
+  async createProject(@User() user: ReqUser, @Body() dto: CreateProjectDto) {
+    if (dto.projectType === ProjectType.STATIC_SITE) {
+      return this.projectsGrpcService.createProject({
+        ...dto,
         userId: user.id,
-      }),
-    );
-    return project;
+        //@ts-ignore
+        webServiceData: dto.data,
+      });
+    } else if (dto.projectType === ProjectType.WEB_SERVICE) {
+      return this.projectsGrpcService.createProject({
+        ...dto,
+        userId: user.id,
+        //@ts-ignore
+        webServiceData: dto.data,
+      });
+    } else if (dto.projectType === ProjectType.IMAGE) {
+      return this.projectsGrpcService.createProject({
+        ...dto,
+        userId: user.id,
+        //@ts-ignore
+        imageData: dto.data,
+      });
+    }
   }
 
   @Get('/:projectId')
@@ -64,7 +80,13 @@ export class ProjectsController implements OnModuleInit {
 
   @Get('/')
   async getAllProjects(@User() user: ReqUser) {
-    return this.projectsGrpcService.getAllProjects({ userId: user.id });
+    const projects = await lastValueFrom(
+      this.projectsGrpcService.getAllProjects({
+        userId: user.id,
+      }),
+    );
+    console.log({ projects });
+    return projects;
   }
 
   @Delete('/:projectId')

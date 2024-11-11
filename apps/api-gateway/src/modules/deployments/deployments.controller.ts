@@ -11,7 +11,6 @@ import {
   UsePipes,
 } from '@nestjs/common';
 import { ClientGrpc } from '@nestjs/microservices';
-import { CreateDeploymentDto, createDeploymentSchema } from '@servel/dto';
 import { JWTGuard } from '../auth/guards/jwt.guard';
 import {
   PROJECTS_SERVICE_NAME,
@@ -42,17 +41,6 @@ export class DeploymentsController implements OnModuleInit {
     return this.projectsGrpcService.getDeployment({ deploymentId });
   }
 
-  @Post('/')
-  @UsePipes(new ZodPipe(createDeploymentSchema))
-  async createDeployment(
-    @User() user: ReqUser,
-    @Body() body: CreateDeploymentDto,
-  ) {
-    return this.projectsGrpcService.createDeployment({
-      ...body,
-      userId: user.id,
-    });
-  }
 
   @Post('/retry/:deploymentId')
   async retryDeployment(@Param('deploymentId') deploymentId) {

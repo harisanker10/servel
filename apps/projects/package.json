@@ -33,7 +33,7 @@
     "@nestjs/mongoose": "^10.0.10",
     "@nestjs/platform-express": "^10.0.0",
     "@nestjs/typeorm": "^10.0.2",
-    "@servel/dto": "workspace:*",
+    "@servel/common": "workspace:*",
     "@servel/proto": "workspace:*",
     "dotenv": "^16.4.5",
     "mongoose": "^8.5.1",

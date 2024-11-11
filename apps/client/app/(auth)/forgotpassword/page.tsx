@@ -8,7 +8,7 @@ import OtpInput from "@/components/otpInput";
 import { ResendOtp } from "./resendOtp";
 import { useTimer } from "@/hooks/useTimer";
 import { useRouter } from "next/navigation";
-import AuthErrorCard from "@/components/errorCard";
+import ErrorCard from "@/components/errorCard";
 import { sendOtpEmail } from "@/actions/auth/sendOtpEmail";
 import { verifyEmailOtp } from "@/actions/auth/verifyEmailOtp";
 import { resetPassword } from "@/actions/auth/resetPassword";
@@ -82,6 +82,7 @@ export default function ForgotPassword() {
     setIsLoading(true);
     if (passwords.password !== passwords.confirmPassword) {
       setError("Passwords do not match");
+      setIsLoading(false);
       return;
     }
     const res = await resetPassword(email, otp, passwords.password);
@@ -108,7 +109,7 @@ export default function ForgotPassword() {
             {}
             Enter new password
           </p>
-          <AuthErrorCard error={error && error} />
+          <ErrorCard error={error && error} />
         </div>
         <form
           className="space-y-2 py-10 pb-4 pt-8 flex flex-col gap-4"
@@ -154,7 +155,7 @@ export default function ForgotPassword() {
           <h1 className="text-3xl font-bold">Change Password</h1>
           <p className="text-gray-500 dark:text-gray-400">Enter your OTP</p>
         </div>
-        <AuthErrorCard error={error && error} />
+        <ErrorCard error={error && error} />
 
         <OtpInput value={otp} onChange={setOtp} length={6} />
         <div className="flex justify-between items-center">
@@ -183,7 +184,7 @@ export default function ForgotPassword() {
             {}
             Enter your email
           </p>
-          <AuthErrorCard error={error && error} />
+          <ErrorCard error={error && error} />
         </div>
         <form
           className="space-y-2 py-10 pb-4 pt-8 flex flex-col gap-4"

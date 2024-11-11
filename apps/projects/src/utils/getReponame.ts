@@ -1,3 +1,3 @@
-export function getReponame(url: string) {
-  return url.split('/')[4];
+export function getReponame(url: string): string {
+  return url?.split('/')[4];
 }

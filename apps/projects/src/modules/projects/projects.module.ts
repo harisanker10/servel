@@ -15,19 +15,17 @@ import { EnvController } from './controllers/env.controller';
 import { DeploymentsUpdatesController } from './controllers/deployments-updates.controller';
 import { EnvRepository } from 'src/repository/env.repository';
 import { KafkaModule } from '../kafka/kafka.module';
+import { KafkaService } from '../kafka/kafka.service';
 
 @Module({
   imports: [
+    forwardRef(() => AppModule),
+    KafkaModule,
     MongooseModule.forFeature([
       { name: Deployment.name, schema: DeploymentSchema },
       { name: Project.name, schema: ProjectSchema },
-      { name: Image.name, schema: ImageSchema },
-      { name: StaticSite.name, schema: StaticSiteSchema },
-      { name: WebService.name, schema: WebServiceSchema },
       { name: Env.name, schema: EnvSchema },
     ]),
-    KafkaModule,
-    forwardRef(() => AppModule),
   ],
   controllers: [
     ProjectsController,

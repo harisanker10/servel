@@ -15,11 +15,11 @@ export class EnvRepository implements IEnvRepository {
   }): Promise<EnvObject> {
     return new this.envModel(createEnvData)
       .save()
-      .then((doc) => doc.toObject() as EnvObject);
+      .then((doc) => doc?.toObject() as EnvObject);
   }
 
   getEnv(envId: string): Promise<void | EnvObject> {
-    return this.envModel.findOne({ _id: envId });
+    return this.envModel.findOne({ _id: envId }).then((doc) => doc?.toObject());
   }
 
   getAllEnv(userId: string): Promise<(void | EnvObject)[]> {

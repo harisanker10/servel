@@ -1,8 +1,8 @@
-import { All, Controller, Req, Res } from '@nestjs/common';
-import { Request, Response } from 'express';
+import { All, Controller, Next, Req, Res } from '@nestjs/common';
+import { NextFunction, Request, Response } from 'express';
 import { DeploymentsRepository } from 'src/repositories/deployment.repository';
 import { S3 } from './s3.service';
-import axios from 'axios';
+import { createProxyMiddleware } from 'http-proxy-middleware';
 
 @Controller('*')
 export class RequestController {
@@ -12,7 +12,11 @@ export class RequestController {
   ) {}
 
   @All()
-  async serve(@Req() req: Request, @Res() res: Response) {
+  async serve(
+    @Req() req: Request,
+    @Res() res: Response,
+    @Next() next: NextFunction,
+  ) {
     try {
       console.log({
         baseUrl: req.baseUrl,
@@ -32,6 +36,8 @@ export class RequestController {
         res.status(404).send('<h1>404 Not Found</h1>');
       }
 
+      console.log('got corresponding deployment for req', { deployment });
+
       if (deployment.s3Path) {
         const host = req.hostname;
         const id = host.split('.')[0];
@@ -50,16 +56,28 @@ export class RequestController {
         res.send(page);
         // (content.Body as Readable).pipe(res);
       } else if (deployment.clusterServiceName) {
-        const clusterServiceUrl = `http://${deployment.clusterServiceName}:${deployment.port}${req.url}`;
+        const clusterServiceUrl = `http://${deployment.clusterServiceName}:${deployment.port}`;
 
-        const response = await axios({
-          method: req.method,
-          url: clusterServiceUrl,
-          headers: req.headers,
-          data: req.body,
-        });
+        console.log({ clusterServiceUrl });
 
-        res.status(response.status).send(response.data);
+        return createProxyMiddleware({
+          target: clusterServiceUrl,
+          changeOrigin: true,
+          // onError(err, req, res) {
+          //   console.error('Proxy Error:', err.message);
+          //   res.status(500).send('Error forwarding request to cluster service.');
+          // },
+        })(req, res, next);
+
+        // const response = await axios({
+        //   method: req.method,
+        //   url: clusterServiceUrl,
+        //   headers: req.headers,
+        //   data: req.body,
+        // });
+        // console.log({ response });
+        //
+        // res.status(response.status).send(response.data);
       }
     } catch (err) {
       console.log({ err });

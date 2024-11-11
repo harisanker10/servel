@@ -3,7 +3,7 @@ import {
   ProjectType,
   StaticSiteData,
   WebServiceData,
-} from '@servel/dto';
+} from '@servel/common';
 import { DeploymentStrategy } from './IdeploymentStrategy';
 
 export class StaticSiteDeployment extends DeploymentStrategy {
@@ -12,7 +12,7 @@ export class StaticSiteDeployment extends DeploymentStrategy {
     data: WebServiceData | ImageData | StaticSiteData,
     env?: { id: string; values: Record<string, string> },
   ) {
-    super(deploymentId, ProjectType.staticSite, data, env);
+    super(deploymentId, ProjectType.STATIC_SITE, data, env);
   }
 
   async build() {}

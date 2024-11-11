@@ -10,6 +10,7 @@ import {
 } from '@servel/proto/projects';
 import { Observable } from 'rxjs';
 import { EnvService } from '../services/env.service';
+import { RpcException } from '@nestjs/microservices';
 
 @Controller()
 @EnvServiceControllerMethods()
@@ -19,9 +20,10 @@ export class EnvController implements EnvServiceController {
   async getEnvironment(request: GetEnvDto): Promise<Env> {
     const env = await this.envService.getEnv(request.envId);
     if (!env) {
-      throw new Error('Env not found');
+      throw new RpcException('Env not found');
     }
-    return { ...env, userId: env.userId.toString() };
+    const { userId, ...rest } = env;
+    return rest;
   }
 
   createEnvironment(

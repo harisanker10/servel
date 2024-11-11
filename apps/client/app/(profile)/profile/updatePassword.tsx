@@ -16,34 +16,16 @@ import { useToast } from "@/components/ui/use-toast";
 import Spinner from "@/components/spinner";
 import { resetPassword } from "@/actions/auth/resetPassword";
 import { PasswordInput } from "@/components/password-input";
+import { revalidatePath } from "next/cache";
+import SendOtpBtn from "@/components/otp/sendOtpBtn";
 
 export function UpdatePasswordCard({ email }: { email: string }) {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [otpIsLoading, setOtpIsLoading] = useState(false);
   const [otp, setOtp] = useState<string>();
   const { toast } = useToast();
 
   console.log({ password, bool: !!password });
-
-  const handleSendOtp = async () => {
-    setOtpIsLoading(true);
-    const sent = await sendOtpEmail(email);
-    if (sent && "error" in sent) {
-      toast({
-        variant: "destructive",
-        title: "Something went wrong",
-        description:
-          "The service might not be available right now. Please try again later.",
-      });
-    } else {
-      toast({
-        title: "Successful",
-        description: `Otp sent successfully to email ${email}`,
-      });
-    }
-    setOtpIsLoading(false);
-  };
 
   const validate = () => {
     if (password !== confirmPassword) {
@@ -134,9 +116,7 @@ export function UpdatePasswordCard({ email }: { email: string }) {
         </div>
       </CardContent>
       <CardFooter className="w-full flex items-center justify-between">
-        <Button variant="outline" onClick={handleSendOtp}>
-          {otpIsLoading ? <Spinner /> : "Send Otp"}
-        </Button>
+        <SendOtpBtn email={email} validator={() => true} />
         <Button size="sm" disabled={!password} onClick={handleResetPassword}>
           Update Password
         </Button>

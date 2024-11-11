@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { InstanceType, ProjectStatus, ProjectType } from '@servel/dto';
+import { InstanceType, ProjectStatus, ProjectType } from '@servel/common';
 import { Types } from 'mongoose';
 import { BaseObject } from './baseObject';
 
@@ -24,11 +24,11 @@ export class Project {
   @Prop({
     type: String,
     enum: InstanceType,
-    default: InstanceType.tier_0,
+    default: InstanceType.TIER_0,
   })
   instanceType: InstanceType;
 
-  @Prop({ type: Number, enum: ProjectType, required: true })
+  @Prop({ type: String, enum: ProjectType, required: true })
   projectType: ProjectType;
 
   @Prop()
@@ -37,7 +37,7 @@ export class Project {
   @Prop({
     type: String,
     enum: ProjectStatus,
-    default: ProjectStatus.queued,
+    default: ProjectStatus.QUEUED,
   })
   status: ProjectStatus;
 
@@ -47,6 +47,7 @@ export class Project {
 
 export interface ProjectObject extends BaseObject {
   name: string;
+  sourceCode: string;
   instanceType: InstanceType;
   projectType: ProjectType;
   deploymentUrl: string;

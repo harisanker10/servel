@@ -1,8 +1,8 @@
 "use server";
 
 import { $api } from "@/http";
-import { ApiError, formatApiError } from "@/lib/utils/formatApiError";
-import { SignupResponseDto } from "@servel/dto";
+import { ApiError, throwFormattedApiError } from "@/lib/utils/formatApiError";
+import { SignupResponseDto } from "@servel/common";
 
 export async function resetPassword(
   email: string,
@@ -15,5 +15,5 @@ export async function resetPassword(
     .then((res) => {
       return res.data;
     })
-    .catch((err) => formatApiError(err));
+    .catch((err) => throwFormattedApiError(err));
 }

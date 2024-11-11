@@ -1,180 +1,96 @@
 import { Injectable } from '@nestjs/common';
-import { InstanceType, WebServiceData } from '@servel/dto';
-import { exec, spawn } from 'child_process';
-import { randomInt } from 'crypto';
-import { join } from 'path';
-import { Env } from 'src/types/env';
+import { InstanceType, ProjectType, WebServiceData } from '@servel/common';
+import { spawn } from 'child_process';
 import { createDockerFile } from 'src/utils/createDockerfile';
 import { applyKubernetesConfiguration } from 'src/utils/createK8Deployment';
-
-interface BuildWebService {
-  env: Record<string, string>;
-  repoName: string;
-  repoUrl: string;
-  deploymentId: string;
-  buildCommand: string;
-  runCommand: string;
-  instanceType: InstanceType;
-  version: number;
-}
+import { KafkaService } from '../kafka/kafka.service';
+import { writeFile } from 'fs/promises';
+import { cloneRepository } from 'src/utils/cloneRepo';
 
 @Injectable()
 export class BuildService {
-  async buildddd(
-    depl: WebServiceData & {
-      repoName: string;
-      deploymentId: string;
-      env?: Env | undefined;
-      instanceType: InstanceType | undefined;
-    },
-  ) {
-    const image = `harisanker10/${depl.deploymentId}`;
-    let envVars = {
-      GIT_REPO_URL: depl.repoUrl,
-      DEPL_ID: depl.deploymentId,
-      dockerfile: createDockerFile({
-        os: 'node:alpine',
-        runCommand: depl.runCommand,
-        buildCommand: depl.buildCommand,
-        port: depl.port,
-      }),
-      image: image,
-    };
-    if (depl.env && depl.env.values) {
-      envVars = { ...envVars, ...depl.env.values };
-    }
-    const process = spawn('docker', ['run', 'node:alpine', ''], {
-      env: envVars,
-    });
-    process.stdout.on('data', (data) => {
-      console.log(data.toString());
-    });
-    process.stderr.on('data', (data) => {
-      console.log(data.toString());
-    });
-    const buildData = await Promise.any([
-      new Promise((res, rej) => {
-        process.on('exit', (code) => {
-          if (code !== 0) {
-            console.log(`Exited with exit code ${code}`);
-            rej(false);
-          }
-          res(true);
-        });
-      }),
-      new Promise((res, rej) => {
-        process.on('disconnect', (err) => {
-          console.log('Disconnected from process', err);
-          rej(false);
-        });
-      }),
-      new Promise((res, rej) => {
-        process.on('error', (err) => {
-          console.log(err);
-          rej(false);
-        });
-      }),
-      new Promise((res, rej) => {
-        process.on('close', (code) => {
-          if (code !== 0) {
-            console.log(`Exited with exit code ${code}`);
-            rej(false);
-          }
-          res(true);
-        });
-      }),
-    ]);
+  constructor(private readonly kafkaService: KafkaService) {}
 
-    if (buildData) {
-      return { image };
-    }
-    return false;
+  async createDockerImage({
+    data,
+    deploymentId,
+  }: {
+    data: WebServiceData;
+    deploymentId: string;
+  }) {
+    return new Promise(async (resolve, reject) => {
+      const gitUrl = data.repoUrl;
+      const Dockerfile = createDockerFile({
+        os: 'node:alpine',
+        port: data.port,
+        runCommand: data.runCommand,
+        buildCommand: data.buildCommand,
+      });
+      const imageName = `registry:5000/servel-builds-${deploymentId}`;
+      const repoPath = `/repositories/${deploymentId}`;
+
+      await cloneRepository(gitUrl, repoPath);
+      await writeFile(`${repoPath}/Dockerfile`, Dockerfile);
+
+      const process = spawn('buildctl', [
+        '--addr',
+        'tcp://buildkitd:1234',
+        'build',
+        '--frontend=dockerfile.v0',
+        '--local',
+        `context=${repoPath}`,
+        '--local',
+        `dockerfile=${repoPath}`,
+        '--output',
+        `type=image,name=${imageName},push=true,registry.insecure=true`,
+      ]);
+
+      process.stdout.on('data', (data) => {
+        console.log(data?.toString());
+      });
+
+      process.stderr.on('data', (data) => {
+        console.error(data?.toString());
+      });
+
+      process.on('close', (code) => {
+        console.log(`child process exited with code ${code}`);
+        resolve(code === 0 ? imageName : null);
+      });
+    });
   }
 
-  async buildWebService(
-    depl: WebServiceData & {
-      repoName: string;
-      deploymentId: string;
-      env?: Env | undefined;
-      instanceType: InstanceType | undefined;
-    },
-  ) {
-    const scriptPath = join(__dirname, '../../scripts/build.sh');
-    exec(`chmod +x ${scriptPath}`);
-
-    const image = `harisanker10/${depl.deploymentId}`;
-    const buildProcess = spawn(scriptPath, null, {
-      env: {
-        ...process.env,
-        GIT_REPO_NAME: depl.repoName,
-        GIT_REPO_URL: depl.repoUrl,
-        DEPL_ID: depl.deploymentId,
-        dockerfile: createDockerFile({
-          os: 'node:alpine',
-          runCommand: depl.runCommand,
-          buildCommand: depl.buildCommand,
-          port: depl.port,
-        }),
-        image: image,
+  runImage({
+    deploymentId,
+    imageName,
+    envs,
+    port,
+    instanceType,
+  }: {
+    deploymentId: string;
+    imageName: string;
+    envs: Record<string, string>;
+    port: number;
+    instanceType: InstanceType;
+  }) {
+    this.kafkaService.emitClusterUpdates({
+      deploymentId: deploymentId,
+      type: ProjectType.WEB_SERVICE,
+      data: {
+        k8DeploymentId: 's' + deploymentId,
+        k8ServiceId: 's' + deploymentId,
+        port: port,
       },
     });
-
-    buildProcess.stdout.on('data', (data) => {
-      console.log(data.toString());
-    });
-    buildProcess.stderr.on('data', (data) => {
-      console.log(data.toString());
-    });
-    const buildData = await Promise.any([
-      new Promise((res, rej) => {
-        buildProcess.on('exit', (code) => {
-          if (code !== 0) {
-            console.log(`Exited with exit code ${code}`);
-            rej(false);
-          }
-          res(true);
-        });
-      }),
-      new Promise((res, rej) => {
-        buildProcess.on('disconnect', (err) => {
-          console.log('Disconnected from process', err);
-          rej(false);
-        });
-      }),
-      new Promise((res, rej) => {
-        buildProcess.on('error', (err) => {
-          console.log(err);
-          rej(false);
-        });
-      }),
-      new Promise((res, rej) => {
-        buildProcess.on('close', (code) => {
-          if (code !== 0) {
-            console.log(`Exited with exit code ${code}`);
-            rej(false);
-          }
-          res(true);
-        });
-      }),
-    ]);
-
-    if (buildData) {
-      return { image };
-    }
-    return false;
-  }
-
-  async runWebService(image: string, id: string, port: number) {
-    console.log('Running web service...', { image, id, port });
-    const nodePort = randomInt(30001, 32000);
-    await applyKubernetesConfiguration(
-      `deployment${id}`,
-      `container${id}`,
-      image,
-      `service-${id}`,
+    applyKubernetesConfiguration(
+      's' + deploymentId,
+      's' + deploymentId,
+      imageName,
+      's' + deploymentId,
       port,
-      nodePort,
+      envs,
     );
-    return nodePort;
   }
+
+  createImage({}) {}
 }

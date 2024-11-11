@@ -2,9 +2,9 @@
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import AuthErrorCard from "@/components/errorCard";
+import ErrorCard from "@/components/errorCard";
 import { useRouter } from "next/navigation";
-import { ChangeEvent, useState } from "react";
+import { ChangeEvent, useEffect, useState } from "react";
 import Spinner from "@/components/spinner";
 import Link from "next/link";
 import { getServerActionErrors } from "@/lib/utils/getServerActionErrors";
@@ -12,10 +12,10 @@ import { login } from "@/actions/auth/login";
 import GoogleSignInBtn from "@/components/oAuthButtons/googleSignUp";
 import GithubSignInBtn from "@/components/oAuthButtons/githubSignInBtn";
 import { PasswordInput } from "@/components/password-input";
+import { getUser } from "@/lib/auth/getUser";
 
 export default function LoginPage() {
   const router = useRouter();
-
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -23,14 +23,15 @@ export default function LoginPage() {
   const handleInput = (event: ChangeEvent<HTMLInputElement>) => {
     setEmail(event.target.value);
   };
+
   const handleLogin = async () => {
     setIsLoading(true);
-    const res = await login(email, password);
-    if (res && "error" in res) {
-      setError(res.message);
-      setIsLoading(false);
-    } else {
+    try {
+      await login(email, password);
       router.push("/profile");
+    } catch (error: any) {
+      setError(error.message);
+    } finally {
       setIsLoading(false);
     }
   };
@@ -43,7 +44,7 @@ export default function LoginPage() {
           Enter your email below to login to your account
         </p>
       </div>
-      <AuthErrorCard error={error} />
+      <ErrorCard error={error} />
 
       <>
         <div className="space-y-2">
@@ -55,6 +56,7 @@ export default function LoginPage() {
             value={email}
             placeholder="m@example.com"
             onChange={handleInput}
+            className="appearance-none"
             required
           />
         </div>
@@ -69,10 +71,10 @@ export default function LoginPage() {
           </div>
           <PasswordInput
             id="password"
-            type="password"
             name="password"
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            onChange={(e: any) => setPassword(e.target.value)}
+            className="appearance-none"
             required
           />
         </div>

@@ -23,7 +23,7 @@ message Deployment {
     WebServiceData webServiceData = 6;
     StaticSiteData staticSiteData = 7;
   }
-  optional Env env = 8;
+  optional string env = 8;
 }
 
 
@@ -200,13 +200,13 @@ message GetDeploymentsDto { string projectId = 1; }
 
 
 enum ProjectType {
-  webService = 0;
-  staticSite = 1;
-  dockerImage = 2;
+  WEB_SERVICE = 0;
+  STATIC_SITE = 1;
+  IMAGE = 2;
 }
 
 enum InstanceType {
-  tier_0 = 0;
-  tier_1 = 1;
-  tier_2 = 2;
+  TIER_0 = 0;
+  TIER_1 = 1;
+  TIER_2 = 2;
 }

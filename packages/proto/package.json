@@ -4,23 +4,24 @@
   "private": true,
   "exports": {
     "./users": {
-      "types": "./dist/users.d.ts",
-      "node": "./dist/users.js",
-      "require": "./dist/users.js",
-      "es2015": "./dist/users.js",
-      "default": "./dist/users.js"
+      "types": "./dist/proto/users.d.ts",
+      "node": "./dist/proto/users.js",
+      "require": "./dist/proto/users.js",
+      "es2015": "./dist/proto/users.js",
+      "default": "./dist/proto/users.js"
     },
     "./projects": {
-      "types": "./dist/projects.d.ts",
-      "node": "./dist/projects.js",
-      "require": "./dist/projects.js",
-      "es2015": "./dist/projects.js",
-      "default": "./dist/projects.js"
+      "types": "./dist/proto/projects.d.ts",
+      "node": "./dist/proto/projects.js",
+      "require": "./dist/proto/projects.js",
+      "es2015": "./dist/proto/projects.js",
+      "default": "./dist/proto/projects.js"
     }
   },
   "scripts": {
-    "build": "protoc --plugin=./node_modules/.bin/protoc-gen-ts_proto --ts_proto_out=./types --ts_proto_opt=nestJs=true ./proto/* && tsc -b && tsc-alias",
-    "clean": "rm -rf node_modules dist"
+    "protoc-gen": "protoc --plugin=./node_modules/.bin/protoc-gen-ts_proto --ts_proto_opt=stringEnums=true --ts_proto_opt=unrecognizedEnum=false --ts_proto_out=./src/ --ts_proto_opt=nestJs=true ./proto/*",
+    "clean": "rm -rf node_modules dist",
+    "build": "tsc -b && tsc-alias"
   },
   "keywords": [],
   "author": "",

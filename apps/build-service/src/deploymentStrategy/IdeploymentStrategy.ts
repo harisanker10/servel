@@ -4,7 +4,7 @@ import {
   ProjectType,
   StaticSiteData,
   WebServiceData,
-} from '@servel/dto';
+} from '@servel/common';
 import { Env } from 'src/types/env';
 
 @Injectable()

@@ -15,14 +15,14 @@ async function bootstrap() {
     options: {
       client: {
         brokers: [kafkaUrl],
-        sasl: {
-          mechanism: 'plain',
-          username: kafkaUsername,
-          password: kafkaPassword,
-        },
+        // sasl: {
+        //   mechanism: 'plain',
+        //   username: kafkaUsername,
+        //   password: kafkaPassword,
+        // },
       },
       consumer: {
-        groupId: 'build-service-consumer',
+        groupId: 'request-consumer',
       },
     },
   });

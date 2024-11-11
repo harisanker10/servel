@@ -9,7 +9,7 @@ import { Types } from 'mongoose';
   toObject: {
     transform: (doc, ret) => {
       ret.id = ret._id.toString();
-      ret.projectId = ret.projectId.toString();
+      ret.projectId = ret?.projectId && ret?.projectId?.toString();
       delete ret._id;
       delete ret.__v;
       return ret;

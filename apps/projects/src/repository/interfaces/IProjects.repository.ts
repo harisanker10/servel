@@ -3,24 +3,14 @@ import {
   InstanceType,
   ProjectType,
   DeploymentStatus,
-} from '@servel/dto';
+} from '@servel/common';
 
 export interface IProjectsRepository {
   createProject(
     data: CreateProjectDto,
   ): Promise<Project & { deployments: Deployment[] }>;
 
-  createWebServiceDeployment(
-    data: CreateWebServiceDeploymentDto,
-  ): Promise<Deployment & { webServiceData: WebService }>;
-
-  createStaticSiteDeployment(
-    data: CreateStaticSiteDeploymentDto,
-  ): Promise<Deployment & { staticSiteData: StaticSite }>;
-
-  createImageDeployment(
-    data: CreateImageDeploymentDto,
-  ): Promise<Deployment & { imageData: Image }>;
+  createDeployment(data: CreateDeploymentDto): Promise<Deployment>;
 
   getProject(
     projectId: string,
@@ -30,6 +20,13 @@ export interface IProjectsRepository {
 
   getDeployment(deploymentId: string): Promise<Deployment>;
 }
+
+export type CreateDeploymentDto = {
+  envId?: string | undefined;
+  data: WebService | Image | StaticSite;
+  projectId: string;
+};
+
 export interface Project extends BaseDoc {
   name: string;
   instanceType: InstanceType;
@@ -37,17 +34,16 @@ export interface Project extends BaseDoc {
   deploymentUrl: string;
   status: ProjectStatus;
   userId: string;
+  deployments: Deployment[];
 }
 
 export interface Deployment extends BaseDoc {
-  imageData?: Image | undefined;
-  webServiceData?: WebService | undefined;
-  staticSiteData?: StaticSite | undefined;
+  data: Image | WebService | StaticSite;
   status: DeploymentStatus;
-  env?: Env | void;
+  env?: string | undefined;
 }
 
-export interface WebService extends BaseDoc {
+export interface WebService {
   repoUrl: string;
   branch: string;
   commitId: string;
@@ -56,20 +52,17 @@ export interface WebService extends BaseDoc {
   port: number;
 }
 
-export interface StaticSite extends BaseDoc {
+export interface StaticSite {
   repoUrl: string;
   branch: string;
   commitId: string;
-  bucketPath: string;
   outDir: string;
   buildCommand: string;
 }
 
-export interface Image extends BaseDoc {
+export interface Image {
   imageUrl: string;
   port: number;
-  createdAt: string;
-  updatedAt: string;
 }
 
 export interface Env extends BaseDoc {
@@ -79,66 +72,16 @@ export interface Env extends BaseDoc {
 export type PopulatedProject = Project & {};
 
 export interface CreateProjectDto {
-  name?: string | undefined;
+  name: string;
   instanceType: InstanceType;
   projectType: ProjectType;
   userId: string;
   env?: string | void;
-  imageData?: Pick<Image, 'imageUrl' | 'port'> | undefined;
-  webServiceData?:
-    | Pick<
-        WebService,
-        | 'port'
-        | 'runCommand'
-        | 'commitId'
-        | 'branch'
-        | 'repoUrl'
-        | 'buildCommand'
-      >
-    | undefined;
-  staticSiteData?:
-    | Pick<
-        StaticSite,
-        'repoUrl' | 'branch' | 'commitId' | 'buildCommand' | 'outDir'
-      >
-    | undefined;
-}
-
-export interface CreateWebServiceDeploymentDto {
-  projectId: string;
-  env?: string | void;
-  webServiceData: {
-    repoUrl: string;
-    branch?: string | undefined;
-    commitId?: string | undefined;
-    runCommand: string;
-    buildCommand: string;
-    port: number;
-  };
-}
-export interface CreateStaticSiteDeploymentDto {
-  env?: string | void;
-  projectId: string;
-  staticSiteData: {
-    repoUrl: string;
-    branch?: string | undefined;
-    commitId?: string | undefined;
-    buildCommand: string;
-    outDir: string;
-  };
+  data: WebService | Image | StaticSite;
 }
 
 export interface BaseDoc {
   id: string;
   createdAt: string;
   updatedAt: string;
-}
-
-export interface CreateImageDeploymentDto {
-  env?: string | void;
-  projectId: string;
-  imageData: {
-    imageUrl: string;
-    port: number;
-  };
 }

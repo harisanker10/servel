@@ -8,6 +8,7 @@ export class OtpService {
   private otps: Map<string, OtpData>;
   private validTimeInMs: number;
   constructor() {
+    console.log('\n\nInited otp service\n\n');
     this.otps = new Map();
     //setting validity for 5mins
     this.validTimeInMs = 300 * 1000;

@@ -27,11 +27,12 @@
     "@nestjs/microservices": "^10.3.10",
     "@nestjs/mongoose": "^10.0.10",
     "@nestjs/platform-express": "^10.0.0",
-    "@servel/dto": "workspace:*",
+    "@servel/common": "workspace:*",
     "@types/dotenv": "^8.2.0",
     "@types/mongoose": "^5.11.97",
     "axios": "^1.7.3",
     "dotenv": "^16.4.5",
+    "http-proxy-middleware": "^3.0.3",
     "mongoose": "^8.5.1",
     "reflect-metadata": "^0.2.0",
     "rxjs": "^7.8.1"

@@ -11,12 +11,15 @@ import { JwtStrategy } from './strategies/jwt.strategy';
 import { AuthService } from './auth.service';
 import { GoogleStrategy } from './strategies/google.strategy';
 import { env } from 'src/config/env';
+import { GithubStrategy } from './strategies/github.strategy';
+import { UsersModule } from '../users/users.module';
+import { OtpGuard } from './guards/otp.guard';
+import { JWTGuard } from './guards/jwt.guard';
 
 const path = join(__dirname, '../../../proto/users.proto');
-console.log({ path });
-
 @Module({
   imports: [
+    UsersModule,
     ClientsModule.register([
       {
         name: 'users',
@@ -28,13 +31,6 @@ console.log({ path });
         },
       },
     ]),
-    JwtModule.register({
-      global: true,
-      secret: env.JWT_SECRET,
-      signOptions: {
-        expiresIn: '15d',
-      },
-    }),
     PassportModule,
   ],
   controllers: [AuthController],
@@ -45,7 +41,10 @@ console.log({ path });
     JwtStrategy,
     AuthService,
     GoogleStrategy,
+    GithubStrategy,
+    OtpGuard,
+    JWTGuard,
   ],
-  exports: [AuthService],
+  exports: [AuthService, OtpGuard, JWTGuard],
 })
 export class AuthModule {}

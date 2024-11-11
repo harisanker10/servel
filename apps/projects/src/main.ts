@@ -10,8 +10,10 @@ const kafkaUrl = process.env.KAFKA_URL;
 const kafkaUsername = process.env.KAFKA_USERNAME;
 const kafkaPassword = process.env.KAFKA_PASSWORD;
 
+const projectServerUrl = process.env.PROJECTS_SERVER_URL;
+
 async function bootstrap() {
-  console.log('statrt\n');
+  console.log({ kafkaUrl, projectServerUrl });
   const app = await NestFactory.create(AppModule);
 
   app.connectMicroservice<MicroserviceOptions>({
@@ -19,30 +21,33 @@ async function bootstrap() {
     options: {
       protoPath: join(__dirname, '../proto/projects.proto'),
       package: PROJECTS_PACKAGE_NAME,
-      url: '0.0.0.0:50002',
+      url: projectServerUrl,
       onLoadPackageDefinition(pkg, server) {
         new ReflectionService(pkg).addToServer(server);
+      },
+      loader: {
+        enums: String,
       },
     },
   });
 
-  app.connectMicroservice<MicroserviceOptions>({
-    transport: Transport.KAFKA,
-    options: {
-      client: {
-        brokers: [kafkaUrl],
-        sasl: {
-          mechanism: 'plain',
-          username: kafkaUsername,
-          password: kafkaPassword,
-        },
-      },
-      consumer: {
-        groupId: 'projects-consumer',
-      },
-    },
-  });
+  // app.connectMicroservice<MicroserviceOptions>({
+  //   transport: Transport.KAFKA,
+  //   options: {
+  //     client: {
+  //       brokers: [kafkaUrl],
+  //       // sasl: {
+  //       //   mechanism: 'plain',
+  //       //   username: kafkaUsername,
+  //       //   password: kafkaPassword,
+  //       // },
+  //     },
+  //     consumer: {
+  //       groupId: 'projects-consumer',
+  //     },
+  //   },
+  // });
   await app.startAllMicroservices();
-  await app.listen(9846);
+  await app.listen(3009);
 }
 bootstrap();

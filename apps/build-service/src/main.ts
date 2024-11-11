@@ -16,11 +16,11 @@ async function bootstrap() {
       client: {
         clientId: 'build',
         brokers: [kafkaUrl],
-        sasl: {
-          mechanism: 'plain',
-          username: kafkaUsername,
-          password: kafkaPassword,
-        },
+        // sasl: {
+        //   mechanism: 'plain',
+        //   username: kafkaUsername,
+        //   password: kafkaPassword,
+        // },
       },
       consumer: {
         groupId: 'build-consumer',
@@ -29,6 +29,6 @@ async function bootstrap() {
   });
 
   await app.startAllMicroservices();
-  await app.listen(3000);
+  await app.listen(2999);
 }
 bootstrap();

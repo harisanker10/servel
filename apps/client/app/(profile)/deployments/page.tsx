@@ -24,10 +24,11 @@ export default function DeploymentsPage() {
   useEffect(() => {
     (async () => {
       const depls = await getUsersDeployments();
-      if(depls && depls?.length > 0){
-      setDeployments(depls);
-      console.log(depls);
-      console.log({ deployments });
+      console.log({ depls });
+      if (depls && depls?.length > 0) {
+        setDeployments(depls);
+        console.log(depls);
+        console.log({ deployments });
       }
     })();
   }, []);

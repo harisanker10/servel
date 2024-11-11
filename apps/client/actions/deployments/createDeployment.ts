@@ -1,29 +1,22 @@
 "use server";
 
 import { $api } from "@/http";
+import {
+  InstanceType,
+  ProjectType,
+  StaticSiteData,
+  WebServiceData,
+  CreateProjectDto,
+} from "@servel/common";
+import { AxiosError } from "axios";
 
-export interface CreateWebServiceDto {
-  url: string;
-  userId: string;
-  outDir?: string | undefined;
-  runCommand: string;
-  buildCommand?: string | undefined;
-  instanceType: string;
-  envs: {
-    [key: string]: string;
-  };
-}
-
-export async function createDeployment(webService: CreateWebServiceDto) {
-  console.log({ webService });
-  // const parsed = createWebServiceSchema.safeParse(webService);
-  // if (!parsed.success) {
-  //   console.log(parsed.error);
-  //   return { error: "validation error" };
-  // }
+export async function createDeployment(data: CreateProjectDto) {
+  console.log("sending....");
   const res = await $api
-    .post("/deployments", webService)
-    .then((res) => res.data);
-
-  console.log({ res });
+    .post("/projects", data)
+    .then((res) => res.data)
+    .catch((err: AxiosError) => {
+      console.log({ err: err.response?.data });
+    });
+  return res;
 }

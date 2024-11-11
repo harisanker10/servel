@@ -12,12 +12,14 @@ export class GoogleStrategy extends PassportStrategy(Strategy) {
       clientSecret: env.GOOGLE_CLIENT_SECRET,
       callbackURL: env.GOOGLE_AUTH_CALLBACK_URL,
       scope: ['profile', 'email'],
+      accessType: 'offline',
+      prompt: 'consent',
     });
   }
 
   async validate(
-    _accessToken: string,
-    _refreshToken: string,
+    accessToken: string,
+    refreshToken: string,
     profile: any,
   ): Promise<any> {
     console.log({ profile });
@@ -28,6 +30,8 @@ export class GoogleStrategy extends PassportStrategy(Strategy) {
       email: emails[0].value,
       name: `${name.givenName} ${name.familyName || ''}`,
       picture: photos[0].value,
+      accessToken,
+      refreshToken,
     };
     return user;
   }

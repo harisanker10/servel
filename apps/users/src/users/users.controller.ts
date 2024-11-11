@@ -1,9 +1,14 @@
-import { Controller, Inject, UseInterceptors } from '@nestjs/common';
+import {
+  Controller,
+  Inject,
+  NotFoundException,
+  UseFilters,
+  UseInterceptors,
+} from '@nestjs/common';
 import { Observable } from 'rxjs';
 import {
-  CreateUserWithCredentialsDto,
-  CreateUserWithGithubDto,
-  CreateUserWithGoogleDto,
+  AuthType,
+  CreateUserDto,
   FindOneUserDto,
   PaginationDto,
   UpdateUserDto,
@@ -16,6 +21,7 @@ import { UsersService } from './users.service';
 import { ClientKafka, RpcException } from '@nestjs/microservices';
 import { UserControllerErrorHandler } from 'src/interceptors/user-controller-error-handler.interceptor';
 import { KafkaService } from 'src/kafka/kafka.service';
+import { MongoExceptionFilter } from 'src/filters/mongodb.filter';
 
 @Controller('users')
 @UseInterceptors(UserControllerErrorHandler)
@@ -24,55 +30,43 @@ export class UsersController implements UserServiceController {
   constructor(
     private readonly userService: UsersService,
     private readonly kafkaService: KafkaService,
-  ) {
-    console.log('controller');
-  }
+  ) {}
 
-  async createUserWithGithub(user: CreateUserWithGithubDto): Promise<User> {
-    const savedUser = await this.userService.createUserWithGithub(user);
-    this.kafkaService.emitUserCreatedEvent(savedUser);
-    return savedUser;
-  }
-
-  async createUserWithGoogle(user: CreateUserWithGoogleDto): Promise<User> {
-    console.log('creating user with google');
-    const newUser = await this.userService.createUserWithGoogle(user);
-    console.log({ newUser });
-    this.kafkaService.emitUserCreatedEvent(newUser);
-    return newUser;
-  }
-
-  async createUserWithCredentials(
-    user: CreateUserWithCredentialsDto,
-  ): Promise<User> {
-    console.log('creating user with cred');
-    const newUser = await this.userService.createUserWithCredentials(user);
-    delete newUser.password;
-    this.kafkaService.emitUserCreatedEvent(newUser);
-    return newUser;
+  async createUser(data: CreateUserDto): Promise<User> {
+    console.log({ data });
+    const user = await this.userService.createUser({ ...data });
+    this.kafkaService.emitUserCreatedEvent(user);
+    return user;
   }
 
   queryUsers(request: Observable<PaginationDto>): Observable<Users> {
-    return new Observable();
+    throw new RpcException({ details: 'not implemented', code: 4 });
   }
   removeUser(request: FindOneUserDto): User | Promise<User> | Observable<User> {
-    return new Observable();
+    throw new RpcException({ details: 'not implemented', code: 4 });
   }
-  updateUser(body: UpdateUserDto): User | Promise<User> | Observable<User> {
-    throw new Error();
-    //@ts-ignore
-    // return this.userService.updateUser(body) as Promise<User>;
+  async updateUser(body: UpdateUserDto): Promise<User> {
+    console.log({ body });
+    if (body.updates.password) {
+      return this.userService.updatePassword({
+        email: body.email,
+        id: body.id,
+        password: body.updates.password,
+      });
+    } else {
+      return this.userService.updateUserDetails({
+        id: body.id,
+        email: body.email,
+        updates: body.updates,
+      });
+    }
   }
   async findOneUser(userData: FindOneUserDto): Promise<User> {
-    console.log('finding one user');
-    const user = await this.userService.findOne(userData);
-    console.log({ user });
-    if (!user?.email) {
-      throw new RpcException({ code: 5, details: "User doesn't exists" });
-    }
-    return user;
+    //@ts-ignore
+    console.log({ id: userData.id, email: userData.email });
+    return this.userService.findOne({ email: userData.email, id: userData.id });
   }
   findAllUsers(): Observable<Users> {
-    return new Observable();
+    throw new RpcException({ details: 'not implemented', code: 4 });
   }
 }

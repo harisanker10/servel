@@ -8,6 +8,8 @@ const kafkaUrl = process.env.KAFKA_URL;
 const kafkaUsername = process.env.KAFKA_USERNAME;
 const kafkaPassword = process.env.KAFKA_PASSWORD;
 
+const dbUrl = process.env.DB_URL;
+
 const kafkaModule = ClientsModule.register([
   {
     name: 'kafka-service',
@@ -16,11 +18,11 @@ const kafkaModule = ClientsModule.register([
       client: {
         clientId: 'projects',
         brokers: [kafkaUrl],
-        sasl: {
-          mechanism: 'plain',
-          username: kafkaUsername,
-          password: kafkaPassword,
-        },
+        // sasl: {
+        //   mechanism: 'plain',
+        //   username: kafkaUsername,
+        //   password: kafkaPassword,
+        // },
       },
       consumer: {
         groupId: 'projects-consumer',
@@ -30,11 +32,7 @@ const kafkaModule = ClientsModule.register([
 ]);
 
 @Module({
-  imports: [
-    kafkaModule,
-    ProjectsModule,
-    MongooseModule.forRoot('mongodb://localhost:27017/servel-depl'),
-  ],
+  imports: [kafkaModule, ProjectsModule, MongooseModule.forRoot(dbUrl)],
   controllers: [],
   providers: [],
   exports: [kafkaModule],

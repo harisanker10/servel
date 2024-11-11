@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { ProjectType } from "@servel/common";
 import { Container, PanelTop, Server } from "lucide-react";
 
 export function SelectServiceCard({
@@ -21,21 +22,21 @@ export function SelectServiceCard({
 }) {
   const serviceTypes = [
     {
-      value: "web-service",
+      value: ProjectType.WEB_SERVICE,
       title: "Web Service",
       description:
         "Deploy a dynamic application that interacts with users and processes data.",
       icon: <Server />,
     },
     {
-      value: "static-site",
+      value: ProjectType.STATIC_SITE,
       title: "Static Site",
       description:
         "Showcase your work with a fast, responsive, and visually appealing website.",
       icon: <PanelTop />,
     },
     {
-      value: "image",
+      value: ProjectType.IMAGE,
       title: "Image",
       description:
         "Utilize pre-built software packages to streamline your project.",

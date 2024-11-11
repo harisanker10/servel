@@ -2,8 +2,15 @@ import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Navbar } from "@/components/navbar/navbar";
+import { getUser } from "@/lib/auth/getUser";
+import { redirect } from "next/navigation";
 
 export default async function Landing() {
+  const user = await getUser();
+  if (user) {
+    console.log({ user });
+    redirect("/profile");
+  }
   return (
     <div className="flex flex-col min-h-[100dvh]">
       <Navbar />

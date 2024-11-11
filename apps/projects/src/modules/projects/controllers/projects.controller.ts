@@ -1,5 +1,10 @@
 import { Controller, Inject, NotImplementedException } from '@nestjs/common';
-import { ClientKafka, RpcException } from '@nestjs/microservices';
+import {
+  ClientKafka,
+  EventPattern,
+  Payload,
+  RpcException,
+} from '@nestjs/microservices';
 import {
   CreateDeploymentDto,
   CreateProjectDto,
@@ -11,6 +16,7 @@ import {
   GetUserDto,
   PopulatedProject,
   Project,
+  ProjectType,
   Projects,
   ProjectsServiceController,
   ProjectsServiceControllerMethods,
@@ -19,87 +25,70 @@ import {
 import { ProjectsService } from '../services/projects.service';
 import { Observable } from 'rxjs';
 import { KafkaService } from 'src/modules/kafka/kafka.service';
-import { ProjectType } from '@servel/dto';
+import {
+  DeploymentUpdatesDto,
+  ImageData,
+  KafkaTopics,
+  StaticSiteData,
+  WebServiceData,
+} from '@servel/common';
 
 @Controller()
 @ProjectsServiceControllerMethods()
 export class ProjectsController implements ProjectsServiceController {
   constructor(
-    @Inject('kafka-service') private readonly kafkaClient: ClientKafka,
     private readonly kafkaService: KafkaService,
     private readonly projectsService: ProjectsService,
   ) {}
 
+  @EventPattern(KafkaTopics.deploymentUpdates)
+  updateDeployment(@Payload() data: DeploymentUpdatesDto) {
+    console.log({ data });
+    //@ts-ignore
+    this.projectRepo.updateDeployment(data.deploymentId, data.updates);
+  }
+
   async createProject(data: CreateProjectDto): Promise<PopulatedProject> {
-    const project =
-      //@ts-ignore UNRECOGNIZED enum in proto but not in local
-      await this.projectsService.createNewProjectDeployment(data);
+    console.log({ data });
+    const project = await this.projectsService.createProject(data);
+
+    let projectData: ImageData | StaticSiteData | WebServiceData;
 
     this.kafkaService.emitToBuildQueue({
+      projectId: project.id,
       deploymentType: project.projectType,
-      data: data.imageData || data.staticSiteData || data.webServiceData,
+      data: projectData,
       deploymentId: project.deployments[0].id,
-      env: project.deployments[0]?.env && project.deployments[0]?.env.envs,
     });
 
     return {
       ...project,
-      projectType: project.projectType,
       deployments: project.deployments.map((depl) => ({
         ...depl,
-        env: depl.env ? depl.env.id : null,
+        env: '',
+        // env: depl.env ? depl.env : null,
       })),
     };
   }
 
-  async createDeployment(data: CreateDeploymentDto): Promise<Deployment> {
-    console.log({ data });
-    if (data.imageData !== undefined) {
-      const deployment =
-        await this.projectsService.createImageDeploymentForProject({
-          projectId: data.projectId,
-          env: data.env,
-          imageData: data.imageData,
-        });
-      this.kafkaService.emitToBuildQueue({
-        deploymentId: deployment.id,
-        data: deployment.imageData,
-        deploymentType: ProjectType.dockerImage,
-        env: deployment.env && deployment.env.envs,
-      });
-      return { ...deployment, env: deployment.env ? deployment.env.id : null };
-    }
-    if (data.webServiceData !== undefined) {
-      const deployment =
-        await this.projectsService.createWebServiceDeploymentForProject({
-          projectId: data.projectId,
-          env: data.env,
-          webServiceData: data.webServiceData,
-        });
-      this.kafkaService.emitToBuildQueue({
-        deploymentId: deployment.id,
-        data: deployment.webServiceData,
-        deploymentType: ProjectType.webService,
-        env: deployment.env && deployment.env.envs,
-      });
-      return { ...deployment, env: deployment.env ? deployment.env.id : null };
-    }
-    if (data.staticSiteData !== undefined) {
-      const deployment =
-        await this.projectsService.createStaticSiteDeploymentForProject({
-          projectId: data.projectId,
-          env: data.env,
-          staticSiteData: data.staticSiteData,
-        });
-      this.kafkaService.emitToBuildQueue({
-        deploymentId: deployment.id,
-        data: deployment.staticSiteData,
-        deploymentType: ProjectType.staticSite,
-        env: deployment.env && deployment.env.envs,
-      });
-      return { ...deployment, env: deployment.env ? deployment.env.id : null };
-    }
-    throw new Error('Invalid deployment data');
+  async createDeployment(dto: CreateDeploymentDto): Promise<Deployment> {
+    const { projectId, env: envId, userId } = dto;
+
+    const data = dto.imageData || dto.staticSiteData || dto.webServiceData;
+
+    const { imageData, staticSiteData, webServiceData } = dto;
+
+    const deployment = await this.projectsService.createDeploymentForProject({
+      data: { branch: '', commitId: '', ...data },
+      envId,
+      projectId,
+    });
+    return {
+      imageData,
+      staticSiteData,
+      webServiceData,
+      ...deployment,
+    };
   }
 
   async getProject(request: GetProjectDto): Promise<PopulatedProject> {
@@ -109,7 +98,7 @@ export class ProjectsController implements ProjectsServiceController {
       projectType: project.projectType,
       deployments: project.deployments.map((deployment) => ({
         ...deployment,
-        env: deployment.env ? deployment.env.id : null,
+        env: deployment.env ? deployment.env : null,
       })),
     };
   }
@@ -118,10 +107,15 @@ export class ProjectsController implements ProjectsServiceController {
     const projects = await this.projectsService.getAllProjectsOfUser(
       request.userId,
     );
-    console.log({ projects, userId: request.userId });
-    return {
-      projects: projects as Project[],
-    };
+    if (projects.length < 1) {
+      throw new RpcException('No projects');
+    }
+    if (projects.length > 0) {
+      return {
+        //@ts-ignore
+        projects: projects as Project[],
+      };
+    }
   }
 
   getDeployments(
@@ -134,13 +128,12 @@ export class ProjectsController implements ProjectsServiceController {
     const depl = await this.projectsService.getDeploymentById(
       request.deploymentId,
     );
-    console.log({ depl });
     if (!depl) {
       throw new RpcException({
         code: 2,
       });
     }
-    return { ...depl, env: depl.env ? depl.env.id : null };
+    return { ...depl, env: depl.env ? depl.env : null };
   }
 
   stopDeployment(
@@ -175,6 +168,7 @@ export class ProjectsController implements ProjectsServiceController {
     if (!project) {
       throw new RpcException('Not found');
     }
+    //@ts-ignore
     return project;
   }
 }

@@ -7,9 +7,7 @@ export default function RouterProgressBar() {
   const searchParams = useSearchParams();
 
   useEffect(() => {
-    const handleRouteChange = (url: string) => {
-      console.log(`App is changing to ${url}`);
-    };
+    const handleRouteChange = (url: string) => {};
 
     handleRouteChange(pathname + searchParams);
 
