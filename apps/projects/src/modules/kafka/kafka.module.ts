@@ -1,31 +1,11 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { KafkaService } from './kafka.service';
 import 'dotenv/config';
+import { AppModule } from 'src/app.module';
 
 @Module({
-  imports: [
-    ClientsModule.register([
-      {
-        name: 'kafka',
-        transport: Transport.KAFKA,
-        options: {
-          client: {
-            clientId: 'projects-service',
-            brokers: [process.env.KAFKA_URL],
-            // sasl: {
-            //   mechanism: 'plain',
-            //   username: process.env.KAFKA_USERNAME,
-            //   password: process.env.KAFKA_PASSWORD,
-            // },
-          },
-          consumer: {
-            groupId: 'projects-consumer',
-          },
-        },
-      },
-    ]),
-  ],
+  imports: [forwardRef(() => AppModule)],
   controllers: [],
   providers: [KafkaService],
   exports: [KafkaService],

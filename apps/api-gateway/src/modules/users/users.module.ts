@@ -22,6 +22,9 @@ const protoPath = join(__dirname, '../../../proto/users.proto');
           protoPath: protoPath,
           package: 'users',
           url: '0.0.0.0:50001',
+          loader: {
+            enums: String,
+          },
         },
       },
     ]),

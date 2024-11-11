@@ -115,7 +115,7 @@ export class AuthController {
       if (!user) {
         error = 'User not found';
       }
-      if (user && !user?.authType?.includes('github')) {
+      if (user && !user?.authType?.includes(AuthType.GITHUB)) {
         error = 'Not authenticated with Github';
       }
       if (user) {
@@ -196,7 +196,7 @@ export class AuthController {
       if (!user) {
         error = 'User not found';
       }
-      if (user && !user?.authType?.includes('google')) {
+      if (user && !user?.authType?.includes(AuthType.GOOGLE)) {
         error = 'Not authenticated with google';
       }
       if (user) {
@@ -231,7 +231,7 @@ export class AuthController {
     }
     if (
       !existingUser.password ||
-      !existingUser.authType.includes('credentials')
+      !existingUser.authType.includes(AuthType.CREDENTIALS)
     ) {
       throw new BadRequestException('Not authenticated with credentials');
     }

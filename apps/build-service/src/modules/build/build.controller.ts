@@ -33,6 +33,7 @@ export class BuildController {
 
     try {
       const deployement = this.deploymentStrategyResolver.resolve(
+        data.name,
         data.deploymentId,
         data.deploymentType,
         data.data,

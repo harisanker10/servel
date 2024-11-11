@@ -10,6 +10,7 @@ import { Env } from 'src/types/env';
 @Injectable()
 export abstract class DeploymentStrategy {
   constructor(
+    protected readonly deploymentName: string,
     protected readonly deploymentId: string,
     protected readonly deploymentType: ProjectType,
     protected readonly data: WebServiceData | ImageData | StaticSiteData,

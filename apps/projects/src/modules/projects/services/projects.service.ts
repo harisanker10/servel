@@ -1,6 +1,4 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { RpcException } from '@nestjs/microservices';
-import { ProjectType } from '@servel/common';
 import {
   CreateProjectDto,
   ProjectType as ProtoProjectType,
@@ -13,7 +11,6 @@ import {
   WebService,
 } from 'src/repository/interfaces/IProjects.repository';
 import { ProjectRepository } from 'src/repository/project.repository';
-import { getReponame } from 'src/utils/getReponame';
 
 @Injectable()
 export class ProjectsService {

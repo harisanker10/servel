@@ -2,6 +2,7 @@ import { ProjectType } from "..";
 
 export type ClusterUpdatesDto = {
   deploymentId: string;
+  deploymentName: string;
 } & (
   | {
       type: ProjectType.WEB_SERVICE;

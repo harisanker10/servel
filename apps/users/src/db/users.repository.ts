@@ -72,7 +72,7 @@ export class UserRepository implements IUserRepository {
     return this.userModel
       .findOneAndUpdate(
         { email },
-        { password, $addToSet: { authType: 'credentials' } },
+        { password, $addToSet: { authType: AuthType.CREDENTIALS } },
         { new: true },
       )
       .then((doc) => doc.toObject());

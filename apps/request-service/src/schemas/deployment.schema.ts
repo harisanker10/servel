@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { DeploymentStatus, ProjectType } from '@servel/dto';
+import { DeploymentStatus, ProjectType } from '@servel/common';
 import { Types } from 'mongoose';
 
 @Schema({

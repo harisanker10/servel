@@ -37,7 +37,6 @@ export class ProjectRepository implements IProjectsRepository {
   async createProject(
     data: CreateProjectDto,
   ): Promise<ProjectDto & { deployments: DeploymentDto[] }> {
-    console.log({ data });
     const env = data.env ? await this.getEnv(data.env) : null;
     const envId = env && env.id;
 
@@ -63,7 +62,7 @@ export class ProjectRepository implements IProjectsRepository {
     const deployment = await new this.deploymentModel({
       projectId: data.projectId,
       env: env,
-      data: data,
+      data: data.data,
     })
       .save()
       .then((doc) => doc.toObject() as DeploymentObject);
@@ -121,7 +120,7 @@ export class ProjectRepository implements IProjectsRepository {
     return this.projectModel.findOneAndDelete({ _id: projectId });
   }
 
-  async updateDeployment(id: string, updates: Record<string, string>) {
+  async updateProjectWithDeplId(id: string, updates: Record<string, string>) {
     const project = await this.deploymentModel.findOne({ _id: id });
     const updateQuery = await this.projectModel.updateOne(
       { _id: new mongoose.Types.ObjectId(project.projectId) },

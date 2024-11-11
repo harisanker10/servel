@@ -21,6 +21,9 @@ console.log({ path });
           protoPath: path,
           package: PROJECTS_PACKAGE_NAME,
           url: '0.0.0.0:50002',
+          loader: {
+            enums: String,
+          },
         },
       },
     ]),

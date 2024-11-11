@@ -16,22 +16,25 @@ export default function SendOtpBtn({
   const handleSendOtp = async () => {
     if (!validator()) return;
     setOtpIsLoading(true);
-    const sent = await sendOtpEmail(email);
-    if (sent && "error" in sent) {
+    try {
+      const sent = await sendOtpEmail(email);
+      console.log({ sent });
+      toast({
+        variant: "success",
+        title: "Successful",
+        description: `Otp sent successfully to email ${email}`,
+      });
+    } catch (err) {
+      console.log({ err });
       toast({
         variant: "destructive",
         title: "Something went wrong",
         description:
           "The service might not be available right now. Please try again later.",
       });
-    } else {
-      toast({
-        variant: "success",
-        title: "Successful",
-        description: `Otp sent successfully to email ${email}`,
-      });
+    } finally {
+      setOtpIsLoading(false);
     }
-    setOtpIsLoading(false);
   };
 
   return (

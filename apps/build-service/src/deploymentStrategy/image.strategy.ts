@@ -8,11 +8,12 @@ import { DeploymentStrategy } from './IdeploymentStrategy';
 
 export class ImageDeployment extends DeploymentStrategy {
   constructor(
+    deploymentName: string,
     deploymentId: string,
     data: WebServiceData | ImageData | StaticSiteData,
     env?: { id: string; values: Record<string, string> },
   ) {
-    super(deploymentId, ProjectType.IMAGE, data, env);
+    super(deploymentName, deploymentId, ProjectType.IMAGE, data, env);
   }
 
   async build() {}

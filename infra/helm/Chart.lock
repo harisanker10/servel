@@ -2,8 +2,14 @@ dependencies:
 - name: request-service
   repository: file://charts/request-service/
   version: 0.1.0
+- name: registry
+  repository: file://charts/registry
+  version: 0.1.0
+- name: build-service
+  repository: file://charts/build-service/
+  version: 0.1.0
 - name: kafka
   repository: https://ricardo-aires.github.io/helm-charts/
   version: 0.2.1
-digest: sha256:f69c9eafad549a3156956f08ab40dbdebf9017b95cce82f5a025b494c9c134a2
-generated: "2024-11-11T08:31:22.147822237+05:30"
+digest: sha256:9156f73568f00bb15c9e691824dcaa267f5c4cf7530586c43aa9f3b82b9fc375
+generated: "2024-11-11T09:17:09.274118062+05:30"

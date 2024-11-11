@@ -21,6 +21,7 @@ export class DeploymentStrategyResolver {
     private readonly kafkaService: KafkaService,
   ) {}
   resolve(
+    name: string,
     deploymentId: string,
     projectType: ProjectType,
     data: WebServiceData | ImageData | StaticSiteData,
@@ -29,6 +30,7 @@ export class DeploymentStrategyResolver {
     switch (projectType) {
       case ProjectType.WEB_SERVICE:
         return new WebServiceDeployment(
+          name,
           this.buildService,
           this.kafkaService,
           deploymentId,
@@ -36,10 +38,14 @@ export class DeploymentStrategyResolver {
           env,
         );
       case ProjectType.IMAGE:
-        return new ImageDeployment(deploymentId, data as ImageData);
+        return new ImageDeployment(name, deploymentId, data as ImageData);
 
       case ProjectType.STATIC_SITE:
-        return new StaticSiteDeployment(deploymentId, data as StaticSiteData);
+        return new StaticSiteDeployment(
+          name,
+          deploymentId,
+          data as StaticSiteData,
+        );
       default:
         throw new Error('Unsupported project type');
     }

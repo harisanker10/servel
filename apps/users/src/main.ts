@@ -19,6 +19,9 @@ async function bootstrap() {
       onLoadPackageDefinition(pkg, server) {
         new ReflectionService(pkg).addToServer(server);
       },
+      loader: {
+        enums: String,
+      },
     },
   });
   app.connectMicroservice<MicroserviceOptions>({

@@ -9,15 +9,15 @@ dependencies:
   - name: request-service
     repository: file://charts/request-service/
     version: "0.1.0"
-  # - name: registry
-  #   repository: file://charts/registry
-  #   version: "0.1.0"
+  - name: registry
+    repository: file://charts/registry
+    version: "0.1.0"
   # - name: projects-service
   #   repository: file://charts/projects-service/
   #   version: "0.1.0"
-  # - name: build-service
-  #   repository: file://charts/build-service/
-  #   version: "0.1.0"
+  - name: build-service
+    repository: file://charts/build-service/
+    version: "0.1.0"
   - name: kafka
     version: "0.2.1"
     repository: "https://ricardo-aires.github.io/helm-charts/"

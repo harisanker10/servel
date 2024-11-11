@@ -31,22 +31,23 @@ async function bootstrap() {
     },
   });
 
-  // app.connectMicroservice<MicroserviceOptions>({
-  //   transport: Transport.KAFKA,
-  //   options: {
-  //     client: {
-  //       brokers: [kafkaUrl],
-  //       // sasl: {
-  //       //   mechanism: 'plain',
-  //       //   username: kafkaUsername,
-  //       //   password: kafkaPassword,
-  //       // },
-  //     },
-  //     consumer: {
-  //       groupId: 'projects-consumer',
-  //     },
-  //   },
-  // });
+  app.connectMicroservice<MicroserviceOptions>({
+    transport: Transport.KAFKA,
+    options: {
+      client: {
+        clientId: 'projects',
+        brokers: [kafkaUrl],
+        // sasl: {
+        //   mechanism: 'plain',
+        //   username: kafkaUsername,
+        //   password: kafkaPassword,
+        // },
+      },
+      consumer: {
+        groupId: 'projects-consumer',
+      },
+    },
+  });
   await app.startAllMicroservices();
   await app.listen(3009);
 }

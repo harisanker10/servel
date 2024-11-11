@@ -6,7 +6,7 @@ import {
   DeploymentUpdatesDto,
   KafkaTopics,
   ProjectType,
-} from '@servel/dto';
+} from '@servel/common';
 
 @Injectable()
 export class KafkaService {

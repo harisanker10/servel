@@ -70,7 +70,7 @@ export default function DeploymentsPage() {
                 {deployments.map((deployment: any) => (
                   <TableRow key={deployment?.id}>
                     <TableCell className="font-medium">
-                      {deployment?.repoName}
+                      {deployment?.name}
                     </TableCell>
                     <TableCell>
                       <Badge

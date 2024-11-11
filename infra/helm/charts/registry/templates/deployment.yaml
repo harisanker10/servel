@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: registry
+spec:
+  replicas: {{ .Values.registry.replicas }}
+  selector:
+    matchLabels:
+      app: registry
+  template:
+    metadata:
+      labels:
+        app: registry
+    spec:
+      containers:
+        - name: registry
+          image: "{{ .Values.registry.image }}:{{ .Values.registry.tag }}"
+          ports:
+            - containerPort: {{ .Values.registry.port }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: registry
+spec:
+  selector:
+    app: registry
+  ports:
+    - protocol: TCP
+      port: {{ .Values.registry.port }}
+      targetPort: {{ .Values.registry.port }}
+  type: {{ .Values.registry.serviceType }}

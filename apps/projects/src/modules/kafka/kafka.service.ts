@@ -4,7 +4,9 @@ import { BuildQueueMessage, KafkaTopics, ProjectType } from '@servel/common';
 
 @Injectable()
 export class KafkaService {
-  constructor(@Inject('kafka') private readonly kafkaClient: ClientKafka) {}
+  constructor(
+    @Inject('kafka-service') private readonly kafkaClient: ClientKafka,
+  ) {}
 
   emitToBuildQueue(deployment: BuildQueueMessage) {
     this.kafkaClient.emit(KafkaTopics.buildQueue, deployment);

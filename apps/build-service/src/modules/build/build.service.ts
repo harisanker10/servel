@@ -29,6 +29,13 @@ export class BuildService {
       const imageName = `registry:5000/servel-builds-${deploymentId}`;
       const repoPath = `/repositories/${deploymentId}`;
 
+      console.log('Creating docker image with', {
+        gitUrl,
+        Dockerfile,
+        imageName,
+        repoPath,
+      });
+
       await cloneRepository(gitUrl, repoPath);
       await writeFile(`${repoPath}/Dockerfile`, Dockerfile);
 
@@ -61,12 +68,14 @@ export class BuildService {
   }
 
   runImage({
+    deploymentName,
     deploymentId,
     imageName,
     envs,
     port,
     instanceType,
   }: {
+    deploymentName: string;
     deploymentId: string;
     imageName: string;
     envs: Record<string, string>;
@@ -74,6 +83,7 @@ export class BuildService {
     instanceType: InstanceType;
   }) {
     this.kafkaService.emitClusterUpdates({
+      deploymentName: deploymentName,
       deploymentId: deploymentId,
       type: ProjectType.WEB_SERVICE,
       data: {

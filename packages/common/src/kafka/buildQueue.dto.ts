@@ -5,6 +5,7 @@
 import { ImageData, ProjectType, StaticSiteData, WebServiceData } from "..";
 
 export type BuildQueueMessage = {
+  name: string;
   projectId: string;
   deploymentId: string;
   deploymentType: ProjectType;

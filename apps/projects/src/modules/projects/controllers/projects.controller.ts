@@ -41,22 +41,23 @@ export class ProjectsController implements ProjectsServiceController {
     private readonly projectsService: ProjectsService,
   ) {}
 
-  @EventPattern(KafkaTopics.deploymentUpdates)
-  updateDeployment(@Payload() data: DeploymentUpdatesDto) {
-    console.log({ data });
-    //@ts-ignore
-    this.projectRepo.updateDeployment(data.deploymentId, data.updates);
-  }
-
   async createProject(data: CreateProjectDto): Promise<PopulatedProject> {
     console.log({ data });
     const project = await this.projectsService.createProject(data);
 
-    let projectData: ImageData | StaticSiteData | WebServiceData;
+    console.log({
+      project,
+      deployemnts: project.deployments[0],
+      deplData: project.deployments[0].data,
+    });
+
+    const projectData: ImageData | StaticSiteData | WebServiceData =
+      project.deployments[0].data;
 
     this.kafkaService.emitToBuildQueue({
       projectId: project.id,
       deploymentType: project.projectType,
+      name: project.name,
       data: projectData,
       deploymentId: project.deployments[0].id,
     });

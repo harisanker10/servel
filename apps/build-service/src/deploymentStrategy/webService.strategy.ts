@@ -7,13 +7,14 @@ import { KafkaService } from 'src/modules/kafka/kafka.service';
 export class WebServiceDeployment extends DeploymentStrategy {
   private imageName: string | undefined;
   constructor(
+    deploymentName: string,
     private readonly buildService: BuildService,
     private readonly kafkaService: KafkaService,
     deploymentId: string,
     data: WebServiceData,
     env?: Env | undefined,
   ) {
-    super(deploymentId, ProjectType.WEB_SERVICE, data, env);
+    super(deploymentName, deploymentId, ProjectType.WEB_SERVICE, data, env);
   }
 
   async build() {
@@ -29,6 +30,7 @@ export class WebServiceDeployment extends DeploymentStrategy {
   async deploy(): Promise<any> {
     if (this.imageName) {
       this.buildService.runImage({
+        deploymentName: this.deploymentName,
         deploymentId: this.deploymentId,
         imageName: this.imageName,
         port: this.getData().port,
