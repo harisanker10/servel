@@ -1,21 +1,24 @@
-import {
-  CreateDeploymentDto,
-  CreateProjectDto,
-  Deployment as DeploymentDto,
-  IProjectsRepository,
-  Image as ImageDto,
-  Project as ProjectDto,
-  StaticSite as StaticSiteDto,
-  WebService as WebServiceDto,
-} from './interfaces/IProjects.repository';
-import { InjectModel } from '@nestjs/mongoose';
-import { Project, ProjectObject } from 'src/schemas/project.schema';
-import mongoose, { Model, Mongoose, Types } from 'mongoose';
-import { Deployment, DeploymentObject } from 'src/schemas/deployment.schema';
-import { Env, EnvObject } from 'src/schemas/env.schema';
 import { Injectable } from '@nestjs/common';
-
-//TODO: Make queries efficient
+import { InjectModel } from '@nestjs/mongoose';
+import { DeploymentStatus, ProjectType } from '@servel/common';
+import { Model } from 'mongoose';
+import { Deployment } from 'src/schemas/deployment.schema';
+import { Env } from 'src/schemas/env.schema';
+import { Image } from 'src/schemas/image.schema';
+import { Project } from 'src/schemas/project.schema';
+import { Request } from 'src/schemas/request.schema';
+import { StaticSite } from 'src/schemas/staticsite.schema';
+import { WebService } from 'src/schemas/webService.schema';
+import {
+  CreateProjectDto,
+  Image as IImage,
+  Project as IProject,
+  IProjectsRepository,
+  StaticSite as IStaticSite,
+  WebService as IWebService,
+  PopulatedProject,
+} from './interfaces/IProjects.repository';
+import { Deployment as IDeployment } from './interfaces/IDeployment.repository';
 
 @Injectable()
 export class ProjectRepository implements IProjectsRepository {
@@ -26,106 +29,124 @@ export class ProjectRepository implements IProjectsRepository {
     private readonly deploymentModel: Model<Deployment>,
     @InjectModel(Env.name)
     private readonly envModel: Model<Env>,
+    @InjectModel(Request.name)
+    private readonly reqModel: Model<Request>,
+    @InjectModel(WebService.name)
+    private readonly webServiceModel: Model<WebService>,
+    @InjectModel(Image.name)
+    private readonly imageModel: Model<WebService>,
+    @InjectModel(StaticSite.name)
+    private readonly staticSiteModel: Model<WebService>,
   ) {}
 
-  private async getEnv(envId: string): Promise<EnvObject | void> {
-    return this.envModel
-      .findOne({ _id: envId })
-      .then((doc) => (doc ? (doc.toObject() as EnvObject) : null));
-  }
-
-  async createProject(
+  async createProject<T extends ProjectType = ProjectType>(
     data: CreateProjectDto,
-  ): Promise<ProjectDto & { deployments: DeploymentDto[] }> {
-    const env = data.env ? await this.getEnv(data.env) : null;
-    const envId = env && env.id;
-
-    const project = await new this.projectModel({
-      userId: data.userId,
-      name: data.name,
-      instanceType: data.instanceType,
-      projectType: data.projectType,
-    })
+  ): Promise<PopulatedProject<T>> {
+    console.log({ data });
+    const project = await new this.projectModel({ ...data })
       .save()
-      .then((doc) => doc.toObject() as ProjectObject);
+      .then((doc) => doc.toObject() as IProject);
+    switch (data.projectType) {
+      case ProjectType.WEB_SERVICE: {
+        const webServiceData = await new this.webServiceModel({ ...data.data })
+          .save()
+          .then((doc) => doc.toObject() as IWebService);
+        const deployment = await new this.deploymentModel({
+          projectId: project.id,
+          ...project,
+          data: webServiceData.id,
+          dataModelRef: 'WebService',
+          status: DeploymentStatus.starting,
+        })
+          .save()
+          .then((doc) => doc.toObject() as IDeployment);
+        return {
+          ...project,
+          projectType: project.projectType as T,
+          deployments: [{ ...deployment, data: webServiceData }],
+        };
+      }
 
-    const deployment = await this.createDeployment({
-      projectId: project.id,
-      envId,
-      data: data.data,
-    });
-    return { ...project, deployments: [{ ...deployment, env: envId }] };
+      case ProjectType.STATIC_SITE: {
+        const staticSiteData = await new this.staticSiteModel({ ...data.data })
+          .save()
+          .then((doc) => doc.toObject() as IStaticSite);
+        const deployment = await new this.deploymentModel({
+          projectId: project.id,
+          ...project,
+          data: staticSiteData.id,
+          dataModelRef: 'StaticSite',
+          status: DeploymentStatus.starting,
+        })
+          .save()
+          .then((doc) => doc.toObject() as IDeployment);
+        return {
+          ...project,
+          projectType: project.projectType as T,
+          deployments: [{ ...deployment, data: staticSiteData }],
+        };
+      }
+
+      case ProjectType.IMAGE: {
+        const imageData = await new this.imageModel({ ...data.data })
+          .save()
+          .then((doc) => doc.toObject() as IImage);
+        const deployment = await new this.deploymentModel({
+          projectId: project.id,
+          ...project,
+          data: imageData.id,
+          dataModelRef: 'Image',
+          status: DeploymentStatus.starting,
+        })
+          .save()
+          .then((doc) => doc.toObject() as IDeployment);
+        return {
+          ...project,
+          projectType: project.projectType as T,
+          deployments: [{ ...deployment, data: imageData }],
+        };
+      }
+    }
   }
 
-  async createDeployment(data: CreateDeploymentDto): Promise<DeploymentDto> {
-    const env = data.envId ? await this.getEnv(data.envId) : null;
-    const deployment = await new this.deploymentModel({
-      projectId: data.projectId,
-      env: env,
-      data: data.data,
-    })
-      .save()
-      .then((doc) => doc.toObject() as DeploymentObject);
-    if (env) deployment.env = env.id;
-    return deployment;
-  }
-
-  async getProjects(userId: string): Promise<(ProjectDto | void)[]> {
-    console.log({ userId });
-    const project = await this.projectModel
-      .find({ userId: userId })
-      .then((docs) => {
-        return docs.map((doc) => doc.toObject() as ProjectObject);
-      });
-
-    const aggr = await this.projectModel.aggregate([
-      {
-        $match: { userId },
-      },
-      {
-        $lookup: {
-          from: 'deployments',
-          foreignField: 'projectId',
-          localField: '_id',
-          as: 'Deployments',
-        },
-      },
-    ]);
-    return aggr;
-  }
-
-  async getDeployment(deploymentId: string): Promise<DeploymentDto> {
-    return this.deploymentModel
-      .findOne({ _id: deploymentId })
-      .then((doc) => doc.toObject());
-  }
-
-  async getProject(
-    projectId: string,
-  ): Promise<ProjectDto & { deployments: DeploymentDto[] }> {
-    const deployments = this.deploymentModel
-      .find({ projectId: new Types.ObjectId(projectId) })
-      .then((docs) => docs.map((doc) => doc.toObject() as DeploymentObject));
-    const project = this.projectModel
+  async getProject(projectId: string): Promise<PopulatedProject> {
+    const deploymentsPromise = this.deploymentModel
+      .find({ projectId: projectId })
+      .then((docs) =>
+        docs.map((doc) => {
+          if (doc) {
+            doc.populate('data');
+            return doc?.toObject() as IDeployment;
+          }
+        }),
+      );
+    const projectPromise = this.projectModel
       .findOne({ _id: projectId })
-      .then((doc) => doc.toObject() as ProjectObject);
-    const [deploymentObj, projectObj] = await Promise.all([
-      deployments,
-      project,
+      .then((doc) => doc?.toObject() as IProject);
+    const [deployments, project] = await Promise.all([
+      deploymentsPromise,
+      projectPromise,
     ]);
-    return { ...projectObj, deployments: deploymentObj };
+    return { ...project, deployments };
   }
 
-  async deleteProject(projectId: string): Promise<ProjectDto | void> {
-    return this.projectModel.findOneAndDelete({ _id: projectId });
+  getProjects(userId: string): Promise<(void | IProject)[]> {
+    return this.projectModel
+      .find({ userId })
+      .then((docs) => docs.length && docs.map((doc) => doc.toObject()));
   }
 
-  async updateProjectWithDeplId(id: string, updates: Record<string, string>) {
-    const project = await this.deploymentModel.findOne({ _id: id });
-    const updateQuery = await this.projectModel.updateOne(
-      { _id: new mongoose.Types.ObjectId(project.projectId) },
-      updates,
-    );
-    console.log({ updates, updateQuery });
+  async updateProject(data: {
+    projectId: string;
+    updates: Partial<Record<keyof IProject, any>>;
+  }): Promise<IProject> {
+    console.log(`updating project ${data.projectId} with`, data.updates);
+    return await this.projectModel
+      .findOneAndUpdate(
+        { _id: data.projectId },
+        { ...data.updates },
+        { new: true },
+      )
+      .then((doc) => doc?.toObject() as IProject);
   }
 }

@@ -5,10 +5,9 @@ import {
   Inject,
   OnModuleInit,
   Param,
+  Patch,
   Post,
-  Req,
   UseGuards,
-  UsePipes,
 } from '@nestjs/common';
 import { ClientGrpc } from '@nestjs/microservices';
 import { JWTGuard } from '../auth/guards/jwt.guard';
@@ -16,9 +15,9 @@ import {
   PROJECTS_SERVICE_NAME,
   ProjectsServiceClient,
 } from '@servel/proto/projects';
-import { ZodPipe } from 'src/pipes/zodValidation.pipe';
 import { User } from 'src/utils/user.decorator';
 import { ReqUser } from 'types/JWTPayload';
+import { lastValueFrom } from 'rxjs';
 
 @Controller('/deployments')
 @UseGuards(JWTGuard)
@@ -37,13 +36,43 @@ export class DeploymentsController implements OnModuleInit {
   //   rpc DeleteDeployment(GetDeploymentDto) returns (Deployment) {}
 
   @Get('/:deploymentId')
-  async getProject(@User() user: ReqUser, @Param('deploymentId') deploymentId) {
-    return this.projectsGrpcService.getDeployment({ deploymentId });
+  async getDeployment(@Param('deploymentId') deploymentId: string) {
+    const { webServiceData, staticSiteData, imageData, ...rest } =
+      await lastValueFrom(
+        this.projectsGrpcService.getDeployment({ deploymentId }),
+      );
+    return { ...rest, data: webServiceData || staticSiteData || imageData };
   }
 
+  @Patch('/stop/:deploymentId')
+  async stopDeployment(
+    @User() user: ReqUser,
+    @Param('deploymentId') deploymentId: string,
+  ) {
+    console.log('stopping depl', deploymentId);
+    return this.projectsGrpcService.stopDeployment({
+      deploymentId: deploymentId,
+    });
+  }
 
-  @Post('/retry/:deploymentId')
-  async retryDeployment(@Param('deploymentId') deploymentId) {
-    return this.projectsGrpcService.retryDeployment({ deploymentId });
+  @Get('/all/:projectId')
+  async getAllDeployments(
+    @User() user: ReqUser,
+    @Param('projectId') projectId: string,
+  ) {
+    const depls = await lastValueFrom(
+      this.projectsGrpcService.getDeployments({ projectId }),
+    );
+    return depls.deployments.map((depl) => ({
+      ...depl,
+      data: depl.imageData || depl.staticSiteData || depl.webServiceData,
+    }));
+  }
+
+  @Patch('/retry/')
+  async retryDeployment(@Body() body: { deploymentId: string }) {
+    return this.projectsGrpcService.retryDeployment({
+      deploymentId: body.deploymentId,
+    });
   }
 }

@@ -19,8 +19,8 @@ export default function SideBar() {
   const inactiveStle = "text-muted-foreground";
 
   return (
-    <aside className="sticky top-0 flex w-14 flex-col border-r bg-background sm:flex">
-      <nav className="flex flex-col items-center gap-4 px-2 sm:py-5">
+    <aside className="sticky top-0 flex w-14 flex-col border-r bg-background sm:flex min-h-screen">
+      <nav className="flex flex-col items-center gap-4 px-2 sm:py-5 min-h-screen">
         <TooltipProvider>
           <Link
             href="/profile"
@@ -32,8 +32,8 @@ export default function SideBar() {
           <Tooltip>
             <TooltipTrigger asChild>
               <Link
-                href="/deployments"
-                className={`flex h-9 w-9 ${path === "/deployments" ? activeStyle : inactiveStle} items-center justify-center rounded-lg text-accent-foreground transition-colors hover:text-foreground md:h-8 md:w-8`}
+                href="/projects"
+                className={`flex h-9 w-9 ${path === "projects" ? activeStyle : inactiveStle} items-center justify-center rounded-lg text-accent-foreground transition-colors hover:text-foreground md:h-8 md:w-8`}
               >
                 <PackageIcon className="h-6 w-6" />
                 <span className="sr-only">Deployments</span>

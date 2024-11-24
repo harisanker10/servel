@@ -2,7 +2,7 @@
 
 import { $api } from "@/http";
 import { ApiError, throwFormattedApiError } from "@/lib/utils/formatApiError";
-import { SignupResponseDto } from "@servel/common";
+import { SignupResponseDto } from "@servel/common/dto";
 
 export async function resetPassword(
   email: string,

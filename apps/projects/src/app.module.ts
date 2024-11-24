@@ -18,11 +18,6 @@ const kafkaModule = ClientsModule.register([
       client: {
         clientId: 'projects',
         brokers: [kafkaUrl],
-        // sasl: {
-        //   mechanism: 'plain',
-        //   username: kafkaUsername,
-        //   password: kafkaPassword,
-        // },
       },
       consumer: {
         groupId: 'projects-consumer',
@@ -32,7 +27,11 @@ const kafkaModule = ClientsModule.register([
 ]);
 
 @Module({
-  imports: [kafkaModule, ProjectsModule, MongooseModule.forRoot(dbUrl)],
+  imports: [
+    kafkaModule,
+    ProjectsModule,
+    MongooseModule.forRoot(dbUrl, { dbName: 'servel' }),
+  ],
   controllers: [],
   providers: [],
   exports: [kafkaModule],

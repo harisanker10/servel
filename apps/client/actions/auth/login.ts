@@ -3,7 +3,7 @@
 import { $api } from "@/http";
 import { setAccessToken } from "@/lib/session/setSession";
 import { throwFormattedApiError } from "@/lib/utils/formatApiError";
-import { ErrorResponse, LoginResponseDto } from "@servel/common";
+import { ErrorResponse, LoginResponseDto } from "@servel/common/dto";
 import { AxiosError } from "axios";
 
 export async function login(email: string, password: string) {

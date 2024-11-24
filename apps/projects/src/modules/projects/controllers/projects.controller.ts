@@ -1,10 +1,9 @@
-import { Controller, Inject, NotImplementedException } from '@nestjs/common';
 import {
-  ClientKafka,
-  EventPattern,
-  Payload,
-  RpcException,
-} from '@nestjs/microservices';
+  Controller,
+  NotImplementedException,
+  UseInterceptors,
+} from '@nestjs/common';
+import { RpcException } from '@nestjs/microservices';
 import {
   CreateDeploymentDto,
   CreateProjectDto,
@@ -26,63 +25,73 @@ import { ProjectsService } from '../services/projects.service';
 import { Observable } from 'rxjs';
 import { KafkaService } from 'src/modules/kafka/kafka.service';
 import {
-  DeploymentUpdatesDto,
+  DeploymentStatus,
   ImageData,
-  KafkaTopics,
+  InstanceType,
+  ProjectStatus,
   StaticSiteData,
   WebServiceData,
 } from '@servel/common';
+import { KubernetesService } from '../services/kubernetes.service';
+import { DomainErrorInterceptor } from 'src/interceptors/domainError.interceptor';
+import {
+  Image,
+  WebService,
+} from 'src/repository/interfaces/IProjects.repository';
 
 @Controller()
+@UseInterceptors(DomainErrorInterceptor)
 @ProjectsServiceControllerMethods()
 export class ProjectsController implements ProjectsServiceController {
   constructor(
     private readonly kafkaService: KafkaService,
     private readonly projectsService: ProjectsService,
+    private readonly kubernetesService: KubernetesService,
   ) {}
 
-  async createProject(data: CreateProjectDto): Promise<PopulatedProject> {
-    console.log({ data });
-    const project = await this.projectsService.createProject(data);
+  startDeployment(request: GetDeploymentDto): Promise<Deployment> {
+    throw new RpcException('not implemented');
+  }
 
-    console.log({
-      project,
-      deployemnts: project.deployments[0],
-      deplData: project.deployments[0].data,
-    });
-
-    const projectData: ImageData | StaticSiteData | WebServiceData =
-      project.deployments[0].data;
+  async createProject(dto: CreateProjectDto): Promise<PopulatedProject> {
+    const project = await this.projectsService.createProject(dto);
 
     this.kafkaService.emitToBuildQueue({
       projectId: project.id,
       deploymentType: project.projectType,
       name: project.name,
-      data: projectData,
+      data: project.deployments[0].data,
       deploymentId: project.deployments[0].id,
     });
 
+    const deployments: Deployment[] = project.deployments.map((depl) => {
+      const { data, ...rest } = depl;
+      if (project.projectType === ProjectType.WEB_SERVICE) {
+        return { webServiceData: data, ...rest } as Deployment;
+      } else if (project.projectType === ProjectType.STATIC_SITE) {
+        return { staticSiteData: data, ...rest } as Deployment;
+      } else if (project.projectType === ProjectType.IMAGE) {
+        return { imageData: data, ...rest } as Deployment;
+      }
+      throw new Error('Invalide project type');
+    });
+
     return {
+      deploymentUrl: '',
+      deployments,
       ...project,
-      deployments: project.deployments.map((depl) => ({
-        ...depl,
-        env: '',
-        // env: depl.env ? depl.env : null,
-      })),
     };
   }
 
   async createDeployment(dto: CreateDeploymentDto): Promise<Deployment> {
-    const { projectId, env: envId, userId } = dto;
-
+    const { projectId, env: envId } = dto;
     const data = dto.imageData || dto.staticSiteData || dto.webServiceData;
-
     const { imageData, staticSiteData, webServiceData } = dto;
 
     const deployment = await this.projectsService.createDeploymentForProject({
-      data: { branch: '', commitId: '', ...data },
       envId,
       projectId,
+      data,
     });
     return {
       imageData,
@@ -94,13 +103,22 @@ export class ProjectsController implements ProjectsServiceController {
 
   async getProject(request: GetProjectDto): Promise<PopulatedProject> {
     const project = await this.projectsService.getProject(request.projectId);
+    const deployments: Deployment[] = project.deployments.map((depl) => {
+      const { data, ...rest } = depl;
+      if (project.projectType === ProjectType.WEB_SERVICE) {
+        return { webServiceData: data, ...rest } as Deployment;
+      } else if (project.projectType === ProjectType.STATIC_SITE) {
+        return { staticSiteData: data, ...rest } as Deployment;
+      } else if (project.projectType === ProjectType.IMAGE) {
+        return { imageData: data, ...rest } as Deployment;
+      }
+      throw new Error('Invalide project type');
+    });
     return {
       ...project,
       projectType: project.projectType,
-      deployments: project.deployments.map((deployment) => ({
-        ...deployment,
-        env: deployment.env ? deployment.env : null,
-      })),
+      deploymentUrl: project.deploymentUrl,
+      deployments,
     };
   }
 
@@ -119,35 +137,146 @@ export class ProjectsController implements ProjectsServiceController {
     }
   }
 
-  getDeployments(
-    request: GetDeploymentsDto,
-  ): Deployments | Promise<Deployments> | Observable<Deployments> {
-    throw new NotImplementedException();
+  async getDeployments(request: GetDeploymentsDto): Promise<Deployments> {
+    const project = await this.projectsService.getProject(request.projectId);
+    // const deployments = await this.projectsService.getAllDeployments(
+    //   request.projectId,
+    // );
+    if (project.projectType === ProjectType.WEB_SERVICE) {
+      return {
+        deployments: project.deployments.map((depl) => ({
+          ...depl,
+          webServiceData: depl.data as WebServiceData,
+        })),
+      };
+    }
+
+    if (project.projectType === ProjectType.STATIC_SITE) {
+      return {
+        deployments: project.deployments.map((depl) => ({
+          ...depl,
+          staticSiteData: depl.data as StaticSiteData,
+        })),
+      };
+    }
+
+    if (project.projectType === ProjectType.IMAGE) {
+      return {
+        deployments: project.deployments.map((depl) => ({
+          ...depl,
+          imageData: depl.data as ImageData,
+        })),
+      };
+    }
+
+    throw new RpcException({ code: 2 });
   }
 
   async getDeployment(request: GetDeploymentDto): Promise<Deployment> {
-    const depl = await this.projectsService.getDeploymentById(
-      request.deploymentId,
-    );
+    const depl = await this.projectsService.getDeployment(request.deploymentId);
     if (!depl) {
       throw new RpcException({
         code: 2,
       });
     }
-    return { ...depl, env: depl.env ? depl.env : null };
+
+    if ('port' in depl.data && 'runCommand' in depl.data) {
+      return {
+        ...depl,
+        env: depl.env ? depl.env : null,
+        webServiceData: depl.data,
+      };
+    } else if ('outDir' in depl.data) {
+      return {
+        ...depl,
+        env: depl.env ? depl.env : null,
+        staticSiteData: depl.data,
+      };
+    } else if ('imageUrl' in depl.data) {
+      return { ...depl, env: depl.env ? depl.env : null, imageData: depl.data };
+    }
   }
 
-  stopDeployment(
-    request: GetDeploymentDto,
-  ): Deployment | Promise<Deployment> | Observable<Deployment> {
-    throw new NotImplementedException();
+  async stopDeployment(data: GetDeploymentDto): Promise<Deployment> {
+    const deployment = await this.projectsService.getDeployment(
+      data.deploymentId,
+    );
+
+    const project = await this.projectsService.getProject(deployment.projectId);
+    if (project.projectType === ProjectType.WEB_SERVICE) {
+      const { clusterServiceName, clusterDeploymentName } =
+        deployment.data as WebService;
+      console.log({ data: deployment.data });
+      const k8data = await Promise.all([
+        this.kubernetesService.deleteDeployment(
+          'default',
+          clusterDeploymentName,
+        ),
+        this.kubernetesService.deleteClusterIPService(
+          'default',
+          clusterServiceName,
+        ),
+      ]);
+    }
+    await this.projectsService.updateDeployment(deployment.id, {
+      status: DeploymentStatus.stopped,
+    });
+
+    await this.projectsService.updateProject(deployment.projectId, {
+      status: ProjectStatus.STOPPED,
+      deploymentUrl: '',
+    });
+    this.kafkaService.emitDeploymentUpdates({
+      updates: { status: ProjectStatus.STOPPED, deploymentUrl: '' },
+      deploymentId: deployment.id,
+    });
+    return this.projectsService.getDeployment(data.deploymentId);
   }
 
-  retryDeployment(
-    request: GetDeploymentDto,
-  ): Deployment | Promise<Deployment> | Observable<Deployment> {
-    throw new NotImplementedException();
+  async retryDeployment(request: GetDeploymentDto): Promise<Deployment> {
+    const deployment = await this.projectsService.getDeployment(
+      request.deploymentId,
+    );
+
+    const project = await this.projectsService.getProject(deployment.projectId);
+
+    await this.projectsService.updateDeploymentsWithProjectId({
+      projectId: deployment.projectId,
+      updateAll: { status: DeploymentStatus.stopped },
+    });
+
+    this.kafkaService.emitToBuildQueue({
+      deploymentId: deployment.id,
+      data: deployment.data,
+      projectId: deployment.projectId,
+      name: project.name,
+      deploymentType: project.projectType,
+    });
+    return deployment;
   }
+
+  async stopProject(dto: GetProjectDto): Promise<Project> {
+    const deployments = await this.projectsService.getDeploymentsOfProject(
+      dto.projectId,
+    );
+
+    for (const depl of deployments) {
+      if (depl.status === DeploymentStatus.active) {
+        await this.stopDeployment({ deploymentId: depl.id });
+        return {
+          ...(await this.getProject({ projectId: depl.projectId })),
+          instanceType: InstanceType.TIER_0,
+        };
+      }
+    }
+
+    throw new RpcException('No active deployment');
+  }
+
+  async startProject(dto: GetProjectDto): Promise<Project> {
+    throw new RpcException('Not Implemented');
+  }
+
   rollbackProject(
     request: GetDeploymentDto,
   ): Deployment | Promise<Deployment> | Observable<Deployment> {
@@ -165,11 +294,6 @@ export class ProjectsController implements ProjectsServiceController {
   }
 
   async deleteProject(request: GetProjectDto): Promise<Project> {
-    const project = await this.projectsService.deleteProject(request.projectId);
-    if (!project) {
-      throw new RpcException('Not found');
-    }
-    //@ts-ignore
-    return project;
+    throw new RpcException('Not implemented');
   }
 }

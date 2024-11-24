@@ -2,7 +2,7 @@
 import { $api } from "@/http";
 import { setAccessToken } from "@/lib/session/setSession";
 import { redirect } from "next/navigation";
-import { ErrorResponse, SignupResponseDto } from "@servel/common";
+import { ErrorResponse, SignupResponseDto } from "@servel/common/dto";
 import { revalidatePath } from "next/cache";
 export async function signup(
   email: string,

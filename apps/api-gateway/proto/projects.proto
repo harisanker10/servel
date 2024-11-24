@@ -32,6 +32,8 @@ service ProjectsService {
   rpc GetProject(GetProjectDto) returns (PopulatedProject) {}
   rpc CreateProject(CreateProjectDto) returns (PopulatedProject) {}
   rpc DeleteProject(GetProjectDto) returns (Project) {}
+  rpc StopProject(GetProjectDto) returns (Project) {}
+  rpc StartProject(GetProjectDto) returns (Project) {}
 
   rpc UpdateInstanceType(UpdateInstanceTypeDto) returns (Project) {}
 
@@ -39,6 +41,7 @@ service ProjectsService {
   rpc GetDeployments(GetDeploymentsDto) returns (Deployments) {}
   rpc GetDeployment(GetDeploymentDto) returns (Deployment) {}
   rpc StopDeployment(GetDeploymentDto) returns (Deployment) {}
+  rpc StartDeployment(GetDeploymentDto) returns (Deployment) {}
   rpc DeleteDeployment(GetDeploymentDto) returns (Deployment) {}
 
   rpc RetryDeployment(GetDeploymentDto) returns (Deployment) {}

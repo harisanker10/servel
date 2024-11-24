@@ -1,6 +1,4 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import mongoose, { Types } from 'mongoose';
-import { BaseObject } from './baseObject';
 
 @Schema({
   collection: 'webservices',
@@ -8,25 +6,20 @@ import { BaseObject } from './baseObject';
   versionKey: false,
   toObject: {
     transform: (doc, ret) => {
-      ret.id = ret._id;
+      ret.id = ret._id.toString();
       delete ret._id;
-      delete ret.__v;
-      return ret;
     },
   },
 })
 export class WebService {
-  @Prop({ ref: 'Deployment', type: Types.ObjectId, required: true })
-  deploymentId: Types.ObjectId;
-
   @Prop({ required: true })
   repoUrl: string;
 
   @Prop()
-  branch: string;
+  branch?: string | undefined;
 
   @Prop()
-  commitId: string;
+  commitId?: string | undefined;
 
   @Prop({ required: true })
   runCommand: string;
@@ -36,8 +29,15 @@ export class WebService {
 
   @Prop({ required: true })
   port: number;
-}
 
-export type WebServiceObject = WebService & BaseObject;
+  @Prop()
+  image?: string | undefined;
+
+  @Prop()
+  clusterServiceName?: string | undefined;
+
+  @Prop()
+  clusterDeploymentName?: string | undefined;
+}
 
 export const WebServiceSchema = SchemaFactory.createForClass(WebService);

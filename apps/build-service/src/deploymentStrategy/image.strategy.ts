@@ -1,26 +1,21 @@
-import {
-  ImageData,
-  ProjectType,
-  StaticSiteData,
-  WebServiceData,
-} from '@servel/common';
 import { DeploymentStrategy } from './IdeploymentStrategy';
+import { DeploymentData } from 'src/types/deployment';
+import { BuildService } from 'src/modules/build/build.service';
 
 export class ImageDeployment extends DeploymentStrategy {
   constructor(
-    deploymentName: string,
-    deploymentId: string,
-    data: WebServiceData | ImageData | StaticSiteData,
+    private readonly buildService: BuildService,
+    data: DeploymentData,
     env?: { id: string; values: Record<string, string> },
   ) {
-    super(deploymentName, deploymentId, ProjectType.IMAGE, data, env);
+    super({ data, env });
   }
 
   async build() {}
 
   async deploy(): Promise<any> {}
 
-  getData(): WebServiceData | ImageData | StaticSiteData {
-    return this.data;
+  getData() {
+    return { ...(this.data as DeploymentData), env: this.env };
   }
 }

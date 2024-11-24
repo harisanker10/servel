@@ -1,13 +1,6 @@
-import {
-  Controller,
-  Inject,
-  NotFoundException,
-  UseFilters,
-  UseInterceptors,
-} from '@nestjs/common';
+import { Controller, UseInterceptors } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import {
-  AuthType,
   CreateUserDto,
   FindOneUserDto,
   PaginationDto,
@@ -18,10 +11,10 @@ import {
   Users,
 } from '@servel/proto/users';
 import { UsersService } from './users.service';
-import { ClientKafka, RpcException } from '@nestjs/microservices';
+import { RpcException } from '@nestjs/microservices';
 import { UserControllerErrorHandler } from 'src/interceptors/user-controller-error-handler.interceptor';
 import { KafkaService } from 'src/kafka/kafka.service';
-import { MongoExceptionFilter } from 'src/filters/mongodb.filter';
+import { GRPCErrorHandlerInterceptor } from '@servel/common';
 
 @Controller('users')
 @UseInterceptors(UserControllerErrorHandler)

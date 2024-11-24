@@ -1,33 +1,97 @@
 import { Controller, Logger } from '@nestjs/common';
 import { EventPattern, Payload } from '@nestjs/microservices';
-import { DeploymentUpdatesDto, KafkaTopics } from '@servel/common';
-import { stat } from 'fs';
-import { ProjectRepository } from 'src/repository/project.repository';
+import {
+  ClusterUpdatesDto,
+  DeploymentUpdatesDto,
+  KafkaTopics,
+  ProjectType,
+  DeploymentImageUpdateDto,
+  ProjectStatus,
+  DeploymentStatus,
+} from '@servel/common';
+import { ProjectsService } from '../services/projects.service';
 
 @Controller()
 export class DeploymentsUpdatesController {
   private logger: Logger;
-  constructor(private readonly projectRepo: ProjectRepository) {
+  constructor(private readonly projectService: ProjectsService) {
     this.logger = new Logger(DeploymentsUpdatesController.name);
   }
 
   @EventPattern(KafkaTopics.deploymentUpdates)
   async updateDeployment(@Payload() data: DeploymentUpdatesDto) {
-    this.logger.log({ data });
-    const project = await this.projectRepo.getDeployment(data.deploymentId);
-    if (!project.id) {
-      this.logger.error('No deployment found with id: ' + data.deploymentId);
-      return;
+    try {
+      this.logger.log({ data });
+      const deployment = await this.projectService.getDeployment(
+        data.deploymentId,
+      );
+      if (!deployment.id) {
+        this.logger.error('No deployment found with id: ' + data.deploymentId);
+        return;
+      }
+      if (data.updates.status || data.updates.deploymentUrl) {
+        if (data.updates.status === ProjectStatus.DEPLOYED) {
+          await this.projectService.updateDeploymentsWithProjectId({
+            projectId: deployment.projectId,
+            updateAll: { status: DeploymentStatus.stopped },
+          });
+          await this.projectService.updateDeployment(deployment.id, {
+            status: DeploymentStatus.active,
+          });
+        }
+        await this.projectService.updateProject(deployment.projectId, {
+          status: data.updates?.status,
+          deploymentUrl: data.updates?.deploymentUrl,
+        });
+      }
+    } catch (err) {
+      console.log(err);
     }
-    if (data.updates.status) {
-      await this.projectRepo.updateProjectWithDeplId(data.deploymentId, {
-        status: data.updates.status,
-      });
+  }
+
+  // @EventPattern(KafkaTopics.requests)
+  // async updateRequests(@Payload() data: { deploymentId: string; ip: string }) {
+  //   this.logger.log({ data });
+  //   try {
+  //     await this.projectRepo.addReq({
+  //       deploymentId: data.deploymentId,
+  //       ip: data.ip,
+  //     });
+  //   } catch (err) {
+  //     this.logger.error(err);
+  //   }
+  // }
+
+  @EventPattern(KafkaTopics.clusterUpdates)
+  async updateCluster(@Payload() data: ClusterUpdatesDto) {
+    console.log({ clueterUpdates: data });
+    try {
+      if (data.type === ProjectType.WEB_SERVICE) {
+        const query = await this.projectService.updateDeploymentData(
+          data.deploymentId,
+          {
+            clusterDeploymentName: data.data.k8DeploymentId,
+            clusterServiceName: data.data.k8ServiceId,
+          },
+        );
+        console.log({ query });
+      }
+    } catch (err) {
+      this.logger.error(err);
     }
-    if (data.updates.deploymentUrl) {
-      await this.projectRepo.updateProjectWithDeplId(data.deploymentId, {
-        deploymentUrl: data.updates.deploymentUrl,
-      });
+  }
+
+  @EventPattern(KafkaTopics.imageUpdates)
+  async updateDeploymentImage(@Payload() data: DeploymentImageUpdateDto) {
+    console.log({ imageUpdates: data });
+    try {
+      const query = await this.projectService.updateDeploymentData(
+        data.deploymentId,
+        { image: data.image },
+      );
+      console.log({ query });
+    } catch (err) {
+      this.logger.error(err);
     }
   }
 }

@@ -19,7 +19,8 @@
     "noFallthroughCasesInSwitch": false,
   },
     "exclude": [
-    "./scripts/*"
+    "./scripts/*",
+    "./repositories"
   ],
     "include": [ "src"]
 }

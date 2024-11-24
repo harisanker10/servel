@@ -8,15 +8,17 @@ import {
   Param,
   Patch,
   Post,
-  Req,
   UseGuards,
-  UsePipes,
 } from '@nestjs/common';
 import { ClientGrpc } from '@nestjs/microservices';
 import {
   ProjectType,
-  createProjectSchema,
   CreateProjectDto,
+  CreateProjectDtoRes,
+  WebServiceData,
+  StaticSiteData,
+  ImageData,
+  DeploymentData,
 } from '@servel/common';
 import { lastValueFrom } from 'rxjs';
 import { JWTGuard } from '../auth/guards/jwt.guard';
@@ -24,7 +26,6 @@ import {
   PROJECTS_SERVICE_NAME,
   ProjectsServiceClient,
 } from '@servel/proto/projects';
-import { ZodPipe } from 'src/pipes/zodValidation.pipe';
 import { User } from 'src/utils/user.decorator';
 import { ReqUser } from 'types/JWTPayload';
 
@@ -48,34 +49,66 @@ export class ProjectsController implements OnModuleInit {
 
   @Post('/')
   // @UsePipes(new ZodPipe(createProjectSchema))
-  async createProject(@User() user: ReqUser, @Body() dto: CreateProjectDto) {
+  async createProject(
+    @User() user: ReqUser,
+    @Body() dto: CreateProjectDto,
+  ): Promise<CreateProjectDtoRes> {
+    let webServiceData: WebServiceData | undefined;
+    let staticSiteData: StaticSiteData | undefined;
+    let imageData: ImageData | undefined;
+
     if (dto.projectType === ProjectType.STATIC_SITE) {
-      return this.projectsGrpcService.createProject({
-        ...dto,
-        userId: user.id,
-        //@ts-ignore
-        webServiceData: dto.data,
-      });
+      staticSiteData = dto.data as StaticSiteData;
     } else if (dto.projectType === ProjectType.WEB_SERVICE) {
-      return this.projectsGrpcService.createProject({
-        ...dto,
-        userId: user.id,
-        //@ts-ignore
-        webServiceData: dto.data,
-      });
+      webServiceData = dto.data as WebServiceData;
     } else if (dto.projectType === ProjectType.IMAGE) {
-      return this.projectsGrpcService.createProject({
-        ...dto,
-        userId: user.id,
-        //@ts-ignore
-        imageData: dto.data,
-      });
+      imageData = dto.data as ImageData;
     }
+
+    const project = await lastValueFrom(
+      this.projectsGrpcService.createProject({
+        ...dto,
+        staticSiteData,
+        webServiceData,
+        imageData,
+        env: '',
+        userId: user.id,
+      }),
+    );
+
+    console.log({ project, depls: project.deployments });
+
+    return {
+      ...project,
+      //@ts-ignore
+      deployments: project.deployments.map((depl) => ({
+        ...depl,
+        data: (depl.imageData ||
+          depl.webServiceData ||
+          depl.staticSiteData) as DeploymentData,
+      })),
+    };
   }
 
   @Get('/:projectId')
-  async getProject(@User() user: ReqUser, @Param('projectId') projectId) {
-    return this.projectsGrpcService.getProject({ projectId });
+  async getProject(
+    @User() user: ReqUser,
+    @Param('projectId') projectId: string,
+  ) {
+    console.log({ projectId });
+    const project = await lastValueFrom(
+      this.projectsGrpcService.getProject({ projectId }),
+    );
+    return {
+      ...project,
+      deployments: project.deployments.map((depl) => {
+        const { webServiceData, imageData, staticSiteData, ...rest } = depl;
+        return {
+          data: webServiceData || imageData || staticSiteData,
+          ...rest,
+        };
+      }),
+    };
   }
 
   @Get('/')
@@ -85,8 +118,20 @@ export class ProjectsController implements OnModuleInit {
         userId: user.id,
       }),
     );
-    console.log({ projects });
+    console.log({ projects: JSON.stringify(projects) });
     return projects;
+  }
+
+  @Patch('/redeploy')
+  async retryProject(@Body() body: any) {
+    return this.projectsGrpcService.retryDeployment({
+      deploymentId: body.deploymentId,
+    });
+  }
+
+  @Patch('/stop')
+  async stopProject(@Body() body: { projectId: string }) {
+    return this.projectsGrpcService.stopProject({ projectId: body.projectId });
   }
 
   @Delete('/:projectId')

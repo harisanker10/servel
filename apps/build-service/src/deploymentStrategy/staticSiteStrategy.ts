@@ -5,22 +5,29 @@ import {
   WebServiceData,
 } from '@servel/common';
 import { DeploymentStrategy } from './IdeploymentStrategy';
+import { BuildService } from 'src/modules/build/build.service';
+import { DeploymentData } from 'src/types/deployment';
+import { Env } from 'src/types/env';
 
 export class StaticSiteDeployment extends DeploymentStrategy {
   constructor(
-    deploymentName: string,
-    deploymentId: string,
-    data: WebServiceData | ImageData | StaticSiteData,
-    env?: { id: string; values: Record<string, string> },
+    private readonly buildService: BuildService,
+    data: DeploymentData,
+    env?: Env | undefined,
   ) {
-    super(deploymentName, deploymentId, ProjectType.STATIC_SITE, data, env);
+    super({ data, env });
   }
 
-  async build() {}
+  async build() {
+    return this.buildService.buildStaticSite({
+      data: { ...(this.data as StaticSiteData) },
+      deploymentId: this.data.deploymentId,
+    });
+  }
 
   async deploy(): Promise<any> {}
 
-  getData(): WebServiceData | ImageData | StaticSiteData {
-    return this.data;
+  getData() {
+    return { ...(this.data as DeploymentData), env: this.env };
   }
 }

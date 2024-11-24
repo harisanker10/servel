@@ -3,24 +3,23 @@ import { DeploymentStrategy } from './IdeploymentStrategy';
 import { Env } from 'src/types/env';
 import { BuildService } from 'src/modules/build/build.service';
 import { KafkaService } from 'src/modules/kafka/kafka.service';
+import { Inject, OnModuleInit } from '@nestjs/common';
+import { DeploymentData } from 'src/types/deployment';
 
 export class WebServiceDeployment extends DeploymentStrategy {
   private imageName: string | undefined;
   constructor(
-    deploymentName: string,
     private readonly buildService: BuildService,
-    private readonly kafkaService: KafkaService,
-    deploymentId: string,
-    data: WebServiceData,
+    data: DeploymentData,
     env?: Env | undefined,
   ) {
-    super(deploymentName, deploymentId, ProjectType.WEB_SERVICE, data, env);
+    super({ data, env });
   }
 
   async build() {
     const imageName = await this.buildService.createDockerImage({
-      data: this.getData(),
-      deploymentId: this.deploymentId,
+      data: this.getData() as WebServiceData,
+      deploymentId: this.getData().deploymentId,
     });
     if (typeof imageName === 'string' && imageName.length > 0) {
       this.imageName = imageName;
@@ -30,10 +29,10 @@ export class WebServiceDeployment extends DeploymentStrategy {
   async deploy(): Promise<any> {
     if (this.imageName) {
       this.buildService.runImage({
-        deploymentName: this.deploymentName,
-        deploymentId: this.deploymentId,
+        deploymentName: this.data.deploymentName,
+        deploymentId: this.data.deploymentId,
         imageName: this.imageName,
-        port: this.getData().port,
+        port: (this.data as WebServiceData).port,
         envs: this.env?.values,
         instanceType: InstanceType.TIER_0,
       });
@@ -42,7 +41,7 @@ export class WebServiceDeployment extends DeploymentStrategy {
     }
   }
 
-  getData(): WebServiceData {
-    return this.data as WebServiceData;
+  getData() {
+    return { ...(this.data as DeploymentData), env: this.env };
   }
 }

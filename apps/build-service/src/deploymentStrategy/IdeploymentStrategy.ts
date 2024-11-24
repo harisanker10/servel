@@ -1,24 +1,22 @@
 import { Injectable } from '@nestjs/common';
-import {
-  ImageData,
-  ProjectType,
-  StaticSiteData,
-  WebServiceData,
-} from '@servel/common';
+import { ImageData, StaticSiteData, WebServiceData } from '@servel/common';
+import { DeploymentData } from 'src/types/deployment';
 import { Env } from 'src/types/env';
 
 @Injectable()
 export abstract class DeploymentStrategy {
-  constructor(
-    protected readonly deploymentName: string,
-    protected readonly deploymentId: string,
-    protected readonly deploymentType: ProjectType,
-    protected readonly data: WebServiceData | ImageData | StaticSiteData,
-    protected readonly env: Env | undefined,
-  ) {}
+  protected readonly data: {
+    deploymentName: string;
+    deploymentId: string;
+  } & (WebServiceData | ImageData | StaticSiteData);
+  protected readonly env: Env | undefined;
+  constructor({ data, env }: { data: DeploymentData; env: Env | undefined }) {
+    this.data = data;
+    this.env = env;
+  }
   abstract build(): Promise<any>;
   abstract deploy(): Promise<any>;
   getData() {
-    return this.data;
+    return { ...this.data, env: this.env };
   }
 }

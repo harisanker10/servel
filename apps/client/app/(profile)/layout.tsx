@@ -16,13 +16,12 @@ export default async function ProfileLayout({
 
   return (
     <>
-      <div className="mx-auto h-screen flex flex-col items-center">
+      <div className="mx-auto min-h-screen flex flex-col items-center">
         <Navbar />
-        <div className="flex w-full">
+        <div className="flex w-full min-h-screen">
           <SideBar />
           {children}
         </div>
-        <div className="w-full h-40">Footer</div>
       </div>
     </>
   );

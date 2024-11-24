@@ -1,6 +1,13 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { ClientKafka } from '@nestjs/microservices';
-import { BuildQueueMessage, KafkaTopics, ProjectType } from '@servel/common';
+import {
+  BuildQueueMessage,
+  ClusterUpdatesDto,
+  DeploymentUpdatesDto,
+  KafkaTopics,
+  ProjectType,
+  deploymentQueueDto,
+} from '@servel/common';
 
 @Injectable()
 export class KafkaService {
@@ -10,5 +17,17 @@ export class KafkaService {
 
   emitToBuildQueue(deployment: BuildQueueMessage) {
     this.kafkaClient.emit(KafkaTopics.buildQueue, deployment);
+  }
+
+  emitClusterUpdates(updates: ClusterUpdatesDto) {
+    this.kafkaClient.emit(KafkaTopics.clusterUpdates, updates);
+  }
+
+  emitDeploymentUpdates(updates: DeploymentUpdatesDto) {
+    this.kafkaClient.emit(KafkaTopics.deploymentUpdates, updates);
+  }
+
+  emitToDeploymentQueue(deployment: deploymentQueueDto) {
+    this.kafkaClient.emit(KafkaTopics.deploymentQueue, deployment);
   }
 }

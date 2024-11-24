@@ -1,7 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { InstanceType, ProjectStatus, ProjectType } from '@servel/common';
 import { Types } from 'mongoose';
-import { BaseObject } from './baseObject';
 
 @Schema({
   collection: 'projects',
@@ -12,8 +11,6 @@ import { BaseObject } from './baseObject';
       ret.id = ret._id.toString();
       ret.userId.toString();
       delete ret._id;
-      delete ret.__v;
-      return ret;
     },
   },
 })
@@ -32,7 +29,7 @@ export class Project {
   projectType: ProjectType;
 
   @Prop()
-  deploymentUrl: string;
+  deploymentUrl?: string | undefined;
 
   @Prop({
     type: String,
@@ -43,16 +40,6 @@ export class Project {
 
   @Prop({ type: Types.ObjectId, ref: 'User', required: true })
   userId: Types.ObjectId;
-}
-
-export interface ProjectObject extends BaseObject {
-  name: string;
-  sourceCode: string;
-  instanceType: InstanceType;
-  projectType: ProjectType;
-  deploymentUrl: string;
-  status: ProjectStatus;
-  userId: string;
 }
 
 export const ProjectSchema = SchemaFactory.createForClass(Project);

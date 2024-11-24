@@ -213,6 +213,10 @@ export interface ProjectsServiceClient {
 
   deleteProject(request: GetProjectDto): Observable<Project>;
 
+  stopProject(request: GetProjectDto): Observable<Project>;
+
+  startProject(request: GetProjectDto): Observable<Project>;
+
   updateInstanceType(request: UpdateInstanceTypeDto): Observable<Project>;
 
   createDeployment(request: CreateDeploymentDto): Observable<Deployment>;
@@ -222,6 +226,8 @@ export interface ProjectsServiceClient {
   getDeployment(request: GetDeploymentDto): Observable<Deployment>;
 
   stopDeployment(request: GetDeploymentDto): Observable<Deployment>;
+
+  startDeployment(request: GetDeploymentDto): Observable<Deployment>;
 
   deleteDeployment(request: GetDeploymentDto): Observable<Deployment>;
 
@@ -239,6 +245,10 @@ export interface ProjectsServiceController {
 
   deleteProject(request: GetProjectDto): Promise<Project> | Observable<Project> | Project;
 
+  stopProject(request: GetProjectDto): Promise<Project> | Observable<Project> | Project;
+
+  startProject(request: GetProjectDto): Promise<Project> | Observable<Project> | Project;
+
   updateInstanceType(request: UpdateInstanceTypeDto): Promise<Project> | Observable<Project> | Project;
 
   createDeployment(request: CreateDeploymentDto): Promise<Deployment> | Observable<Deployment> | Deployment;
@@ -248,6 +258,8 @@ export interface ProjectsServiceController {
   getDeployment(request: GetDeploymentDto): Promise<Deployment> | Observable<Deployment> | Deployment;
 
   stopDeployment(request: GetDeploymentDto): Promise<Deployment> | Observable<Deployment> | Deployment;
+
+  startDeployment(request: GetDeploymentDto): Promise<Deployment> | Observable<Deployment> | Deployment;
 
   deleteDeployment(request: GetDeploymentDto): Promise<Deployment> | Observable<Deployment> | Deployment;
 
@@ -263,11 +275,14 @@ export function ProjectsServiceControllerMethods() {
       "getProject",
       "createProject",
       "deleteProject",
+      "stopProject",
+      "startProject",
       "updateInstanceType",
       "createDeployment",
       "getDeployments",
       "getDeployment",
       "stopDeployment",
+      "startDeployment",
       "deleteDeployment",
       "retryDeployment",
       "rollbackProject",

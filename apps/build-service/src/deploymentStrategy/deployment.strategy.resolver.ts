@@ -1,51 +1,32 @@
-import {
-  ImageData,
-  ProjectType,
-  StaticSiteData,
-  WebServiceData,
-} from '@servel/common';
+import { ProjectType } from '@servel/common';
 import { DeploymentStrategy } from './IdeploymentStrategy';
 import { WebServiceDeployment } from './webService.strategy';
 import { ImageDeployment } from './image.strategy';
 import { StaticSiteDeployment } from './staticSiteStrategy';
 import { Env } from 'src/types/env';
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { BuildService } from 'src/modules/build/build.service';
-import { KafkaService } from 'src/modules/kafka/kafka.service';
+import { DeploymentData } from 'src/types/deployment';
 
-// Define a resolver to select the appropriate strategy based on project type
 @Injectable()
 export class DeploymentStrategyResolver {
-  constructor(
-    private readonly buildService: BuildService,
-    private readonly kafkaService: KafkaService,
-  ) {}
-  resolve(
-    name: string,
-    deploymentId: string,
-    projectType: ProjectType,
-    data: WebServiceData | ImageData | StaticSiteData,
-    env?: Env | undefined,
-  ): DeploymentStrategy {
+  constructor(private readonly buildService: BuildService) {}
+  resolve({
+    data,
+    projectType,
+    env,
+  }: {
+    data: DeploymentData;
+    projectType: ProjectType;
+    env: Env | undefined;
+  }): DeploymentStrategy {
     switch (projectType) {
       case ProjectType.WEB_SERVICE:
-        return new WebServiceDeployment(
-          name,
-          this.buildService,
-          this.kafkaService,
-          deploymentId,
-          data as WebServiceData,
-          env,
-        );
+        return new WebServiceDeployment(this.buildService, data, env);
       case ProjectType.IMAGE:
-        return new ImageDeployment(name, deploymentId, data as ImageData);
-
+        return new ImageDeployment(this.buildService, data, env);
       case ProjectType.STATIC_SITE:
-        return new StaticSiteDeployment(
-          name,
-          deploymentId,
-          data as StaticSiteData,
-        );
+        return new StaticSiteDeployment(this.buildService, data, env);
       default:
         throw new Error('Unsupported project type');
     }

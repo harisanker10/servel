@@ -1,3 +1,5 @@
+import { Deployment, DeploymentData } from "./deployment";
+
 export enum ProjectType {
   WEB_SERVICE = "WEB_SERVICE",
   STATIC_SITE = "STATIC_SITE",
@@ -19,27 +21,23 @@ export enum ProjectStatus {
   STOPPED = "STOPPED",
 }
 
-export interface ImageData {
-  imageUrl: string;
-  port: number;
-  accessToken?: string;
+export interface PopulatedProject<T extends DeploymentData = DeploymentData> {
+  id: string;
+  name: string;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+  deploymentUrl: string;
+  projectType: ProjectType;
+  deployments: Deployment<T>[];
 }
 
-export interface WebServiceData {
-  repoUrl: string;
-  runCommand: string;
-  buildCommand: string;
-  accessToken?: string;
-  branch?: string;
-  commitId?: string;
-  port: number;
-}
-
-export interface StaticSiteData {
-  repoUrl: string;
-  outDir: string;
-  buildCommand: string;
-  accessToken?: string;
-  branch?: string;
-  commitId?: string;
-}
+export type Project = {
+  id: string;
+  name: string;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+  deploymentUrl: string;
+  projectType: ProjectType;
+};

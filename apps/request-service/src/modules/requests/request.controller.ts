@@ -1,14 +1,16 @@
-import { All, Controller, Next, Req, Res } from '@nestjs/common';
+import { All, Controller, Inject, Next, Req, Res } from '@nestjs/common';
 import { NextFunction, Request, Response } from 'express';
 import { DeploymentsRepository } from 'src/repositories/deployment.repository';
 import { S3 } from './s3.service';
 import { createProxyMiddleware } from 'http-proxy-middleware';
+import { ClientKafka } from '@nestjs/microservices';
 
 @Controller('*')
 export class RequestController {
   constructor(
     private readonly deploymentRepository: DeploymentsRepository,
     private readonly s3service: S3,
+    @Inject('kafka-service') private readonly kafkaServic: ClientKafka,
   ) {}
 
   @All()
@@ -30,6 +32,13 @@ export class RequestController {
         res.status(404).send('<h1>404 Not Found</h1>');
       }
 
+      const clientIp =
+        req.headers['x-forwarded-for'] ||
+        req.connection.remoteAddress ||
+        req.ip;
+      console.log(clientIp);
+      this.kafkaServic.emit('requests', { deploymentId, ip: clientIp });
+
       const deployment =
         await this.deploymentRepository.getDeployment(deploymentId);
       if (!deployment?.id) {
@@ -43,7 +52,7 @@ export class RequestController {
         const id = host.split('.')[0];
         let filePath = req.path;
         if (filePath === '/') filePath = '/index.html';
-        const key = `${id}${filePath}`;
+        const key = `repositories/${id}${filePath}`;
         const type = filePath.endsWith('html')
           ? 'text/html'
           : filePath.endsWith('css')

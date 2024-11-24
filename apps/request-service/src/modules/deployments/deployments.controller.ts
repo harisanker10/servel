@@ -19,10 +19,18 @@ export class DeploymentsController {
         clusterDeploymentName: data.data.k8DeploymentId,
       });
     } else if (data.type === ProjectType.STATIC_SITE) {
-      await this.deploymentRepository.createDeployment({
-        deploymentId: data.deploymentId,
-        s3Path: data.data.s3Path,
-      });
+      // await this.deploymentRepository.createDeployment({
+      //   deploymentId: data.deploymentId,
+      //   s3Path: data.data.s3Path,
+      // });
     }
+  }
+
+  @EventPattern(KafkaTopics.staticSiteUpdates)
+  async updateStaticSite(data: { deploymentId: string; s3Path: string }) {
+    await this.deploymentRepository.createDeployment({
+      deploymentId: data.deploymentId,
+      s3Path: data.s3Path,
+    });
   }
 }

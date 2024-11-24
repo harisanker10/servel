@@ -2,7 +2,7 @@
 
 import { $api } from "@/http";
 
-export async function getUsersDeployments() {
+export async function getAllProjects() {
   const res = await $api
     .get("/projects")
     .then((res) => res.data)

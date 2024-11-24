@@ -3,26 +3,35 @@ import {
   NestInterceptor,
   ExecutionContext,
   CallHandler,
-  NotFoundException,
+  Logger,
 } from '@nestjs/common';
 import { RpcException } from '@nestjs/microservices';
 import { MongooseError, mongo } from 'mongoose';
 import { Observable, catchError, throwError } from 'rxjs';
 import * as grpc from '@grpc/grpc-js';
-import { ConfilictException, CustomError } from '@servel/common';
+import {
+  ConfilictException,
+  CustomError,
+  NotFoundException,
+} from '@servel/common';
 
 @Injectable()
 export class UserControllerErrorHandler implements NestInterceptor {
+  private logger: Logger;
+  constructor() {
+    this.logger = new Logger();
+  }
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     return next.handle().pipe(
       catchError((error) => {
-        console.log({ error });
+        this.logger.error(error);
         if (
           error instanceof mongo.MongoError ||
           error instanceof MongooseError
         ) {
           switch (error.name) {
             case 'CastError':
+              this.logger.log('Throwing error', error.name);
               return throwError(
                 () =>
                   new RpcException({
@@ -33,6 +42,7 @@ export class UserControllerErrorHandler implements NestInterceptor {
           }
         } else if (error instanceof CustomError) {
           if (error instanceof NotFoundException) {
+            this.logger.log('Throwing error', error.name);
             return throwError(
               () =>
                 new RpcException({
@@ -41,6 +51,7 @@ export class UserControllerErrorHandler implements NestInterceptor {
                 }),
             );
           } else if (error instanceof ConfilictException) {
+            this.logger.log('Throwing error', error.name);
             return throwError(
               () =>
                 new RpcException({
