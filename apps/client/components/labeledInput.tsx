@@ -12,6 +12,7 @@ interface LabeledInputProps {
   onChange: (e: ChangeEvent<HTMLInputElement>) => void;
   rightElement?: React.ReactNode;
   validator?: (value: string) => string | null | Promise<string | null>;
+  disabled?: boolean;
 }
 
 export function LabeledInput({
@@ -23,6 +24,7 @@ export function LabeledInput({
   onChange,
   rightElement,
   validator,
+  disabled = false,
   ...rest
 }: LabeledInputProps) {
   const [error, setError] = useState<string | null>(null);
@@ -48,6 +50,7 @@ export function LabeledInput({
             placeholder={placeholder}
             value={value}
             onChange={onChange}
+            disabled={disabled}
             onBlur={async (e) => {
               if (validator) {
                 setIsLoading(true);

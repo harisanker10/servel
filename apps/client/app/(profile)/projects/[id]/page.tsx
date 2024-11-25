@@ -22,7 +22,6 @@ import {
 } from "@/components/ui/table";
 import {
   GitBranch,
-  GitCommit,
   Globe,
   Loader2,
   Play,
@@ -33,6 +32,7 @@ import {
 import { getProject } from "@/actions/projects/getProject";
 import {
   Deployment,
+  DeploymentStatus,
   Project,
   ProjectStatus,
   StaticSiteData,
@@ -40,6 +40,8 @@ import {
 } from "@servel/common/types";
 import { stopProject } from "@/actions/projects/stopProject";
 import { retryDeployment } from "@/actions/deployments/retryDeployment";
+import UpdateEmailBtn from "../../profile/updateEmailBtn";
+import RedeployBtn from "./redeployBtn";
 
 export default function ProjectView() {
   const router = useRouter();
@@ -57,6 +59,23 @@ export default function ProjectView() {
       console.log({ project, deployments: project.deployments });
       project && setProject(project);
       project.deployments && setDeployments(project.deployments);
+      if (
+        [ProjectStatus.QUEUED, ProjectStatus.BUILDING].includes(project?.status)
+      ) {
+        const interval = setInterval(() => {
+          if (
+            [
+              ProjectStatus.FAILED,
+              ProjectStatus.STOPPED,
+              ProjectStatus.DEPLOYED,
+              ProjectStatus.DEPLOYING,
+            ].includes(project?.status)
+          ) {
+            clearInterval(interval);
+          }
+          router.refresh();
+        }, 1000);
+      }
     });
   }, []);
   const handleStopDeployment = async () => {
@@ -161,10 +180,19 @@ export default function ProjectView() {
                 Start
               </Button>
             )}
-            <Button variant="outline" onClick={handleRedeployment}>
-              <RefreshCcw className="w-4 h-4 mr-2" />
-              Redeploy
-            </Button>
+
+            {deployments && deployments.length > 0 && (
+              <RedeployBtn
+                projectType={project?.projectType}
+                initialValues={{
+                  data: {
+                    ...deployments[0]?.data,
+                  },
+                  projectId: project.id,
+                }}
+              />
+            )}
+
             <Button variant="outline" onClick={handleRollback}>
               <RotateCcw className="w-4 h-4 mr-2" />
               Rollback

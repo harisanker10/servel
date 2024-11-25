@@ -7,35 +7,13 @@ import {
   CardTitle,
   CardDescription,
   CardContent,
-  CardFooter,
 } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { updateFullName } from "@/actions/user/updateFullName";
-import {
-  Cross,
-  CrossIcon,
-  Github,
-  Loader2,
-  Mail,
-  Pencil,
-  RotateCcwIcon,
-  Undo,
-  Undo2,
-  X,
-} from "lucide-react";
+import { Github, Pencil, RotateCcwIcon } from "lucide-react";
 import { useState } from "react";
-import { revalidatePath } from "next/cache";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/components/ui/use-toast";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import OtpInput from "@/components/otpInput";
 import UpdateEmailBtn from "./updateEmailBtn";
 
 export function PersonalInfoCard({

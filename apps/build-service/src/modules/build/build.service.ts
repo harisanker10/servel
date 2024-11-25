@@ -157,62 +157,59 @@ export class BuildService {
   //     );
   //   });
   // }
+
+  private execCommand(command: string, options?: { cwd?: string }): Promise<void> {
+  return new Promise((resolve, reject) => {
+    exec(command, options, (err, stdout, stderr) => {
+      if (err) {
+        console.error(`Error executing command "${command}":`, stderr);
+        return reject(err);
+      }
+      console.log(`Command "${command}" output:`, stdout);
+      resolve();
+    });
+  });
+}
+
+
   async buildStaticSite({
-    data,
-    deploymentId,
-  }: {
-    data: StaticSiteData;
-    deploymentId: string;
-  }): Promise<string> {
-    const repoPath = `./repositories/${deploymentId}`;
-    await new Promise(async (res, rej) => {
-      exec('rm -rf ./repositories', async (code) => {
-        console.log('Building static site');
-        await cloneRepository(data.repoUrl, repoPath);
-        exec('npm install', { cwd: repoPath }, (err, stdout, stderr) => {
-          if (err) {
-            console.error('Error during npm install:', stderr);
-            return rej(err);
-          }
-          console.log('npm install output:', stdout);
-          res(true);
-        });
-      });
+  data,
+  deploymentId,
+}: {
+  data: StaticSiteData;
+  deploymentId: string;
+}): Promise<string> {
+  const repoPath = `./repositories/${deploymentId}`;
+  const distDir = join(repoPath, data.outDir);
+
+  try {
+    await this.execCommand(`rm -rf ./repositories`);
+
+    await cloneRepository(data.repoUrl, repoPath);
+    console.log(`Repository cloned to ${repoPath}`);
+
+    await this.execCommand('npm install', { cwd: repoPath });
+    console.log('Dependencies installed successfully.');
+
+    await this.execCommand(data.buildCommand, { cwd: repoPath });
+    console.log(`Build completed successfully. Output directory: ${distDir}`);
+
+    await this.S3.uploadDir(
+      distDir,
+      `./repositories/${deploymentId}/${data.outDir}`,
+      `repositories/${deploymentId}`
+    );
+    console.log(`Static site files uploaded to S3 for deployment ${deploymentId}`);
+
+    this.kafkaService.emitStaticSiteDataUpdates({
+      deploymentId,
+      s3Path: `repositories/${deploymentId}`,
     });
 
-    return new Promise((res, rej) => {
-      exec(
-        data.buildCommand,
-        { cwd: repoPath },
-        async (err, stdout, stderr) => {
-          if (err) {
-            console.error('Error during build:', stderr);
-            return rej(err);
-          }
-          console.log('Build output:', stdout);
-          const distDir = join(repoPath, data.outDir);
-          console.log({ distDir });
-
-          try {
-            await this.S3.uploadDir(
-              distDir,
-              `./repositories/${deploymentId}/${data.outDir}`,
-              `repositories/${deploymentId}`,
-            );
-            console.log(
-              `Static site files uploaded to S3 for deployment ${deploymentId}`,
-            );
-            res(`repositories/${deploymentId}`);
-            this.kafkaService.emitStaticSiteDataUpdates({
-              deploymentId,
-              s3Path: `repositories/${deploymentId}`,
-            });
-          } catch (uploadError) {
-            console.error('Error uploading to S3:', uploadError);
-            rej(uploadError);
-          }
-        },
-      );
-    });
+    return `repositories/${deploymentId}`;
+  } catch (err) {
+    console.error('Error during static site build process:', err);
+    throw err; 
   }
+}
 }

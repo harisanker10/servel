@@ -39,7 +39,7 @@ export class BuildController {
     });
 
     try {
-      const deployement = this.deploymentStrategyResolver.resolve({
+      const deployment = this.deploymentStrategyResolver.resolve({
         data: {
           deploymentId: data.deploymentId,
           deploymentName: data.name,
@@ -48,14 +48,14 @@ export class BuildController {
         env: data.env,
         projectType: data.deploymentType,
       });
-      console.log({ deployement });
-      await deployement.build();
+      console.log({ deployement: deployment });
+      await deployment.build();
       this.kafkaService.emitDeploymentStatusUpdate({
         deploymentId: data.deploymentId,
         updates: { status: ProjectStatus.DEPLOYING },
       });
 
-      await deployement.deploy();
+      await deployment.deploy();
       this.kafkaService.emitDeploymentStatusUpdate({
         deploymentId: data.deploymentId,
         updates: {
@@ -64,6 +64,7 @@ export class BuildController {
         },
       });
     } catch (err) {
+      console.log('error caught in build controller');
       console.log({ err });
       this.kafkaService.emitDeploymentStatusUpdate({
         deploymentId: data.deploymentId,

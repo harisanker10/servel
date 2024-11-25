@@ -117,17 +117,56 @@ export class DeploymentRepository implements IDeploymentsRepository {
   async createDeploymentForProject(
     data: CreateDeploymentDto<IWebService | IStaticSite | IImage>,
   ): Promise<IDeployment> {
+    console.log({ datainRepo: data });
     const oldDepl = await this.deploymentModel
       .findOne({ projectId: data.projectId })
       .then((doc) => doc.toObject());
-    return new this.deploymentModel({
-      projectId: data.projectId,
-      status: DeploymentStatus.starting,
-      dataModelRef: oldDepl.dataModelRef,
-      data: data.data,
-      env: data.envId,
-    })
-      .save()
-      .then((doc) => doc.toObject());
+
+    switch (oldDepl.dataModelRef) {
+      case 'WebService': {
+        const webServiceData = await new this.webServiceModel({ ...data.data })
+          .save()
+          .then((doc) => doc.toObject() as IWebService);
+        const deployment = await new this.deploymentModel({
+          projectId: oldDepl.projectId,
+          data: webServiceData.id,
+          dataModelRef: 'WebService',
+          status: DeploymentStatus.starting,
+        })
+          .save()
+          .then((doc) => doc.toObject() as IDeployment);
+        return this.getDeployment(deployment.id);
+      }
+
+      case 'StaticSite': {
+        const staticSiteData = await new this.staticSiteModel({ ...data.data })
+          .save()
+          .then((doc) => doc.toObject() as IStaticSite);
+        const deployment = await new this.deploymentModel({
+          projectId: oldDepl.projectId,
+          data: staticSiteData.id,
+          dataModelRef: 'StaticSite',
+          status: DeploymentStatus.starting,
+        })
+          .save()
+          .then((doc) => doc.toObject() as IDeployment);
+        return this.getDeployment(deployment.id);
+      }
+
+      case 'Image': {
+        const imageData = await new this.imageModel({ ...data.data })
+          .save()
+          .then((doc) => doc.toObject() as IImage);
+        const deployment = await new this.deploymentModel({
+          projectId: oldDepl.projectId,
+          data: imageData.id,
+          dataModelRef: 'Image',
+          status: DeploymentStatus.starting,
+        })
+          .save()
+          .then((doc) => doc.toObject() as IDeployment);
+        return this.getDeployment(deployment.id);
+      }
+    }
   }
 }

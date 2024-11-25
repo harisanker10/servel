@@ -123,9 +123,17 @@ export class ProjectsController implements OnModuleInit {
   }
 
   @Patch('/redeploy')
-  async retryProject(@Body() body: any) {
-    return this.projectsGrpcService.retryDeployment({
-      deploymentId: body.deploymentId,
+  async retryProject(@Body() body: any, @User() user: ReqUser) {
+    console.log({ body });
+    return this.projectsGrpcService.createDeployment({
+      projectId: body.projectId,
+      userId: user.id,
+      env: body.env,
+      imageData: body.projectType === ProjectType.IMAGE ? body : undefined,
+      staticSiteData:
+        body.projectType === ProjectType.STATIC_SITE ? body : undefined,
+      webServiceData:
+        body.projectType === ProjectType.WEB_SERVICE ? body : undefined,
     });
   }
 

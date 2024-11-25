@@ -88,10 +88,29 @@ export class ProjectsController implements ProjectsServiceController {
     const data = dto.imageData || dto.staticSiteData || dto.webServiceData;
     const { imageData, staticSiteData, webServiceData } = dto;
 
+    await this.projectsService.updateDeploymentsWithProjectId({
+      projectId,
+      updateAll: { status: DeploymentStatus.stopped },
+    });
+
+    const project = await this.projectsService.updateProject(projectId, {
+      deploymentUrl: '',
+      status: ProjectStatus.QUEUED,
+    });
+
     const deployment = await this.projectsService.createDeploymentForProject({
       envId,
       projectId,
       data,
+    });
+
+    console.log({ deployment, data: deployment.data });
+    this.kafkaService.emitToBuildQueue({
+      projectId,
+      data: deployment.data,
+      name: project.name,
+      deploymentId: deployment.id,
+      deploymentType: project.projectType,
     });
     return {
       imageData,

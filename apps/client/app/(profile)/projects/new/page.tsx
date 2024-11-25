@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { SelectServiceCard } from "./selectServiceCard";
-import { DeploymentDetails, FormValues } from "./deploymentDetails";
+import { DeploymentDetails } from "./deploymentDetails";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { EnvVariableCard } from "@/components/env-variable-card";
@@ -9,32 +9,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { InstanceType, ProjectType } from "@servel/common/types";
 import InstanceTypeSelector from "./instanceTypeSelectCard";
 import { createProject } from "@/actions/deployments/createDeployment";
-
-const getInitialValues = (service: ProjectType): FormValues => {
-  switch (service) {
-    case ProjectType.WEB_SERVICE:
-      return {
-        name: "",
-        repoUrl: "",
-        buildCommand: "",
-        runCommand: "",
-        port: 0,
-      };
-    case ProjectType.STATIC_SITE:
-      return {
-        name: "",
-        repoUrl: "",
-        buildCommand: "",
-        outDir: "",
-      };
-    case ProjectType.IMAGE:
-      return {
-        name: "",
-        repoUrl: "",
-        port: 0,
-      };
-  }
-};
+import { DeploymentDetailsFormValues } from "./renderDeploymentDetailsFormFields";
 
 export default function CreateDeployment() {
   const router = useRouter();
@@ -45,12 +20,14 @@ export default function CreateDeployment() {
 
   const [envs, setEnvs] = useState<Record<"key" | "value", string>[]>([]);
   const { toast } = useToast();
-  const [values, setValues] = useState<FormValues>(getInitialValues(service));
+  const [values, setValues] = useState<DeploymentDetailsFormValues>(
+    getInitialDeploymentDetailsValues(service),
+  );
 
   console.log({ service });
   useEffect(() => {
     const { name, repoUrl } = values;
-    setValues({ ...getInitialValues(service), name, repoUrl });
+    setValues({ ...getInitialDeploymentDetailsValues(service), name, repoUrl });
   }, [service]);
   const deploy = async () => {
     if (
@@ -108,4 +85,32 @@ export default function CreateDeployment() {
       </div>
     </>
   );
+}
+
+export function getInitialDeploymentDetailsValues(
+  service: ProjectType,
+): DeploymentDetailsFormValues {
+  switch (service) {
+    case ProjectType.WEB_SERVICE:
+      return {
+        name: "",
+        repoUrl: "",
+        buildCommand: "",
+        runCommand: "",
+        port: 0,
+      };
+    case ProjectType.STATIC_SITE:
+      return {
+        name: "",
+        repoUrl: "",
+        buildCommand: "",
+        outDir: "",
+      };
+    case ProjectType.IMAGE:
+      return {
+        name: "",
+        repoUrl: "",
+        port: 0,
+      };
+  }
 }
