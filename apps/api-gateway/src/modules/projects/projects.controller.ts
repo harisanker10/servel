@@ -125,6 +125,9 @@ export class ProjectsController implements OnModuleInit {
   @Patch('/redeploy')
   async retryProject(@Body() body: any, @User() user: ReqUser) {
     console.log({ body });
+    await lastValueFrom(
+      this.projectsGrpcService.stopProject({ projectId: body.projectId }),
+    );
     return this.projectsGrpcService.createDeployment({
       projectId: body.projectId,
       userId: user.id,
@@ -150,14 +153,22 @@ export class ProjectsController implements OnModuleInit {
     return this.projectsGrpcService.deleteProject({ projectId });
   }
 
-  @Patch('/rollback/:projectId/:deploymentId')
-  async rollbackProject(
-    @Param('projectId') projectId: string,
-    @Param('deploymentId') deploymentId: string,
-  ) {
+  @Post('/start')
+  async startDeployment(@Body() body: { projectId: string }) {
+    return this.projectsGrpcService.startProject({
+      projectId: body.projectId,
+    });
+  }
+
+  @Patch('/rollback')
+  async rollbackProject(@Body('deploymentId') deploymentId: string) {
     return this.projectsGrpcService.rollbackProject({
       deploymentId,
-      projectId,
     });
+  }
+
+  @Get('/analytics/:projectId')
+  async getAnalytics(@Param('projectId') projectId: string) {
+    return this.projectsGrpcService.getRequests({ projectId });
   }
 }

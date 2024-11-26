@@ -4,6 +4,7 @@ import { DeploymentsRepository } from 'src/repositories/deployment.repository';
 import { S3 } from './s3.service';
 import { createProxyMiddleware } from 'http-proxy-middleware';
 import { ClientKafka } from '@nestjs/microservices';
+import { DeploymentStatus, KafkaTopics, RequestDto } from '@servel/common';
 
 @Controller('*')
 export class RequestController {
@@ -32,13 +33,6 @@ export class RequestController {
         res.status(404).send('<h1>404 Not Found</h1>');
       }
 
-      const clientIp =
-        req.headers['x-forwarded-for'] ||
-        req.connection.remoteAddress ||
-        req.ip;
-      console.log(clientIp);
-      this.kafkaServic.emit('requests', { deploymentId, ip: clientIp });
-
       const deployment =
         await this.deploymentRepository.getDeployment(deploymentId);
       if (!deployment?.id) {
@@ -48,6 +42,19 @@ export class RequestController {
       console.log('got corresponding deployment for req', { deployment });
 
       if (deployment.s3Path) {
+        if (deployment.status !== DeploymentStatus.active) {
+          throw new Error('Depl stopped');
+        }
+        const analytics: RequestDto = {
+          deploymentId: deploymentId,
+          method: req.method,
+          url: req.url,
+          ip: req.ip || (req.headers['x-forwarded-for'] as string), // IP address
+          userAgent: req.headers['user-agent'], // User-Agent header
+          referer: req.headers['referer'], // Referer header
+          timestamp: new Date().toISOString(), // Timestamp
+        };
+        this.kafkaServic.emit(KafkaTopics.requests, analytics);
         const host = req.hostname;
         const id = host.split('.')[0];
         let filePath = req.path;
@@ -65,6 +72,16 @@ export class RequestController {
         res.send(page);
         // (content.Body as Readable).pipe(res);
       } else if (deployment.clusterServiceName) {
+        const analytics: RequestDto = {
+          deploymentId: deploymentId,
+          method: req.method,
+          url: req.url,
+          ip: req.ip || (req.headers['x-forwarded-for'] as string), // IP address
+          userAgent: req.headers['user-agent'], // User-Agent header
+          referer: req.headers['referer'], // Referer header
+          timestamp: new Date().toISOString(), // Timestamp
+        };
+        this.kafkaServic.emit(KafkaTopics.requests, analytics);
         const clusterServiceUrl = `http://${deployment.clusterServiceName}:${deployment.port}`;
 
         console.log({ clusterServiceUrl });

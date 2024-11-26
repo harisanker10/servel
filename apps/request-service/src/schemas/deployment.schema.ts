@@ -20,7 +20,7 @@ export class Deployment {
   @Prop({
     type: String,
     enum: DeploymentStatus,
-    default: DeploymentStatus.stopped,
+    default: DeploymentStatus.active,
   })
   status: DeploymentStatus;
 
@@ -59,7 +59,7 @@ export interface DeploymentObject {
   clusterDeploymentName?: string | undefined;
   clusterContainerName?: string | undefined;
   s3Path?: string | undefined;
-  port?: string | undefined;
+  port?: number | undefined;
   createdAt: string;
   updatedAt: string;
 }

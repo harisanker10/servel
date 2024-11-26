@@ -19,6 +19,7 @@ import {
   Projects,
   ProjectsServiceController,
   ProjectsServiceControllerMethods,
+  Requests,
   UpdateInstanceTypeDto,
 } from '@servel/proto/projects';
 import { ProjectsService } from '../services/projects.service';
@@ -49,8 +50,58 @@ export class ProjectsController implements ProjectsServiceController {
     private readonly kubernetesService: KubernetesService,
   ) {}
 
-  startDeployment(request: GetDeploymentDto): Promise<Deployment> {
-    throw new RpcException('not implemented');
+  async startDeployment(dto: GetDeploymentDto): Promise<Deployment> {
+    const deployment = await this.projectsService.getDeployment(
+      dto.deploymentId,
+    );
+    const project = await this.projectsService.getProject(deployment.projectId);
+    console.log('trying roll back', { project, data: deployment.data });
+
+    if (
+      deployment.data &&
+      'port' in deployment.data &&
+      'image' in deployment.data
+    ) {
+      console.log('emitting rollback');
+      this.kafkaService.emitToDeploymentQueue({
+        deploymentId: deployment.id,
+        port: deployment.data.port,
+        image: deployment.data.image,
+        instanceType: InstanceType.TIER_0,
+        deploymentName: project.name,
+      });
+
+      this.projectsService.updateDeploymentsWithProjectId({
+        projectId: deployment.projectId,
+        updateAll: { status: DeploymentStatus.stopped },
+      });
+      this.projectsService.updateDeployment(deployment.id, {
+        status: DeploymentStatus.starting,
+      });
+      this.projectsService.updateProject(project.id, {
+        status: ProjectStatus.QUEUED,
+      });
+
+      return deployment;
+    }
+
+    if (deployment.data && 'outDir' in deployment.data) {
+      console.log('emitting rollback static');
+
+      await this.projectsService.updateProject(project.id, {
+        status: ProjectStatus.DEPLOYED,
+        deploymentUrl: `http://${deployment.id}.servel.com`,
+      });
+
+      await this.projectsService.updateDeployment(deployment.id, {
+        status: DeploymentStatus.active,
+      });
+
+      this.kafkaService.emitStatiSiteUpdates({
+        deploymentId: deployment.id,
+        status: DeploymentStatus.active,
+      });
+    }
   }
 
   async createProject(dto: CreateProjectDto): Promise<PopulatedProject> {
@@ -226,16 +277,24 @@ export class ProjectsController implements ProjectsServiceController {
       const { clusterServiceName, clusterDeploymentName } =
         deployment.data as WebService;
       console.log({ data: deployment.data });
-      const k8data = await Promise.all([
-        this.kubernetesService.deleteDeployment(
-          'default',
-          clusterDeploymentName,
-        ),
-        this.kubernetesService.deleteClusterIPService(
-          'default',
-          clusterServiceName,
-        ),
-      ]);
+      try {
+        const k8data = await Promise.all([
+          this.kubernetesService.deleteDeployment(
+            'default',
+            clusterDeploymentName,
+          ),
+          this.kubernetesService.deleteClusterIPService(
+            'default',
+            clusterServiceName,
+          ),
+        ]);
+      } catch (error) {}
+    } else if (project.projectType === ProjectType.STATIC_SITE) {
+      console.log('stopping static site');
+      this.kafkaService.emitStatiSiteUpdates({
+        deploymentId: deployment.id,
+        status: DeploymentStatus.stopped,
+      });
     }
     await this.projectsService.updateDeployment(deployment.id, {
       status: DeploymentStatus.stopped,
@@ -264,6 +323,10 @@ export class ProjectsController implements ProjectsServiceController {
       updateAll: { status: DeploymentStatus.stopped },
     });
 
+    await this.projectsService.updateDeployment(request.deploymentId, {
+      status: DeploymentStatus.starting,
+    });
+
     this.kafkaService.emitToBuildQueue({
       deploymentId: deployment.id,
       data: deployment.data,
@@ -275,31 +338,70 @@ export class ProjectsController implements ProjectsServiceController {
   }
 
   async stopProject(dto: GetProjectDto): Promise<Project> {
+    console.log('stopping');
+    const project = await this.projectsService.getProject(dto.projectId);
     const deployments = await this.projectsService.getDeploymentsOfProject(
       dto.projectId,
     );
 
-    for (const depl of deployments) {
-      if (depl.status === DeploymentStatus.active) {
-        await this.stopDeployment({ deploymentId: depl.id });
-        return {
-          ...(await this.getProject({ projectId: depl.projectId })),
-          instanceType: InstanceType.TIER_0,
-        };
+    if (project.projectType === ProjectType.STATIC_SITE) {
+      for (const depl of deployments) {
+        console.log('stopping', depl.id);
+        if (depl.status === DeploymentStatus.active) {
+          await this.stopDeployment({ deploymentId: depl.id });
+          this.kafkaService.emitStatiSiteUpdates({
+            deploymentId: depl.id,
+            status: DeploymentStatus.stopped,
+          });
+          return {
+            ...(await this.getProject({ projectId: depl.projectId })),
+            instanceType: InstanceType.TIER_0,
+          };
+        }
+      }
+    } else if (project.projectType === ProjectType.WEB_SERVICE) {
+      for (const depl of deployments) {
+        if (depl.status === DeploymentStatus.active) {
+          await this.stopDeployment({ deploymentId: depl.id });
+          const { clusterServiceName, clusterDeploymentName } =
+            depl.data as WebService;
+          try {
+            const k8data = await Promise.all([
+              this.kubernetesService.deleteDeployment(
+                'default',
+                clusterDeploymentName,
+              ),
+              this.kubernetesService.deleteClusterIPService(
+                'default',
+                clusterServiceName,
+              ),
+            ]);
+          } catch (error) {}
+          return {
+            ...(await this.getProject({ projectId: depl.projectId })),
+            instanceType: InstanceType.TIER_0,
+          };
+        }
       }
     }
+  }
 
-    throw new RpcException('No active deployment');
+  async getRequests(dto: GetProjectDto): Promise<Requests> {
+    //@ts-ignore
+    return { requests: await this.projectsService.getRequest(dto.projectId) };
   }
 
   async startProject(dto: GetProjectDto): Promise<Project> {
     throw new RpcException('Not Implemented');
   }
 
-  rollbackProject(
-    request: GetDeploymentDto,
-  ): Deployment | Promise<Deployment> | Observable<Deployment> {
-    throw new NotImplementedException();
+  async rollbackProject(request: GetDeploymentDto): Promise<Deployment> {
+    console.log({ rollback: request.deploymentId });
+    const deployment = await this.projectsService.getDeployment(
+      request.deploymentId,
+    );
+    await this.stopProject({ projectId: deployment.projectId });
+    return this.startDeployment(request);
   }
   deleteDeployment(
     request: GetDeploymentDto,

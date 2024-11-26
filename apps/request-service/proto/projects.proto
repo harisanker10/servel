@@ -37,6 +37,8 @@ service ProjectsService {
 
   rpc UpdateInstanceType(UpdateInstanceTypeDto) returns (Project) {}
 
+  rpc GetRequests(GetProjectDto) returns (Requests) {}
+
   rpc CreateDeployment(CreateDeploymentDto) returns (Deployment) {}
   rpc GetDeployments(GetDeploymentsDto) returns (Deployments) {}
   rpc GetDeployment(GetDeploymentDto) returns (Deployment) {}
@@ -45,7 +47,7 @@ service ProjectsService {
   rpc DeleteDeployment(GetDeploymentDto) returns (Deployment) {}
 
   rpc RetryDeployment(GetDeploymentDto) returns (Deployment) {}
-  rpc RollbackProject(RollbackProjectDto) returns (Deployment) {}
+  rpc RollbackProject(GetDeploymentDto) returns (Deployment) {}
 }
 
 service EnvService {
@@ -59,6 +61,20 @@ service EnvService {
 message RollbackProjectDto {
   string projectId = 1;
   string deploymentId = 2;
+}
+
+message Request {
+  string deploymentId = 1;
+  string ip = 2;
+  string method = 3;
+  string url = 4;
+  string userAgent = 5;
+  string referer = 6;
+  string timestamp = 7;
+}
+
+message Requests {
+  repeated Request requests = 1;
 }
 
 message CreateEnvDto {

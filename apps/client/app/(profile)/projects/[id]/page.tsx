@@ -1,5 +1,4 @@
 "use client";
-
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -23,6 +22,7 @@ import {
 import {
   GitBranch,
   Globe,
+  LinkIcon,
   Loader2,
   Play,
   RefreshCcw,
@@ -42,11 +42,22 @@ import { stopProject } from "@/actions/projects/stopProject";
 import { retryDeployment } from "@/actions/deployments/retryDeployment";
 import UpdateEmailBtn from "../../profile/updateEmailBtn";
 import RedeployBtn from "./redeployBtn";
+import { getAnalytics } from "@/actions/projects/getAnalytics";
+import AnalyticsCard from "@/components/analyticsCard";
+import ServiceTypeBadge, {
+  ProjectStatusBadge,
+} from "@/components/serviceTypeBadge";
+import RollbackBtn from "./rollbackBtn";
+import { startProject } from "@/actions/projects/startProject";
 
 export default function ProjectView() {
   const router = useRouter();
   const [project, setProject] = useState<Project | null>(null);
+  const [stopLoading, setStopLoading] = useState(false);
+  const [analytics, setAnalytics] = useState<any>();
   const params = useParams();
+
+  console.log({ analytics });
 
   const [deployments, setDeployments] = useState<
     Deployment<WebServiceData | StaticSiteData>[] | null
@@ -59,59 +70,30 @@ export default function ProjectView() {
       console.log({ project, deployments: project.deployments });
       project && setProject(project);
       project.deployments && setDeployments(project.deployments);
-      if (
-        [ProjectStatus.QUEUED, ProjectStatus.BUILDING].includes(project?.status)
-      ) {
-        const interval = setInterval(() => {
-          if (
-            [
-              ProjectStatus.FAILED,
-              ProjectStatus.STOPPED,
-              ProjectStatus.DEPLOYED,
-              ProjectStatus.DEPLOYING,
-            ].includes(project?.status)
-          ) {
-            clearInterval(interval);
-          }
-          router.refresh();
-        }, 1000);
-      }
+      getAnalytics(project.id).then((data) => setAnalytics(data));
     });
   }, []);
   const handleStopDeployment = async () => {
     if (project?.id) {
+      setStopLoading(true);
       await stopProject(project?.id);
+      setStopLoading(false);
       router.push("/projects");
     }
   };
 
-  const handleRedeployment = () => {
-    console.log("Redeploying");
-    // Add logic to redeploy
+  const handleStart = async () => {
+    if (project) await startProject(project?.id);
+    router.refresh();
   };
 
-  const handleRollback = () => {
-    console.log("Rolling back deployment");
-    // Add logic to rollback deployment
-  };
-
-  const handleStart = () => {
-    if (deployments?.length) {
-      const depl = deployments[deployments?.length - 1];
-      if (depl && "id" in depl) {
-        retryDeployment(depl.id);
-      }
+  const renderAnalyticsCard = () => {
+    if (!analytics || !analytics.requests || analytics.requests.length <= 0) {
+      console.log("no analytics.....", analytics);
+      return null;
+    } else {
+      return <AnalyticsCard data={analytics} />;
     }
-  };
-
-  const getStatusBadge = (status: any) => {
-    const variants = {
-      active: "success",
-      completed: "default",
-      failed: "destructive",
-      starting: "warning",
-    };
-    return <Badge variant={variants[status] || "success"}>{status}</Badge>;
   };
 
   if (!project || !project.id) {
@@ -121,17 +103,14 @@ export default function ProjectView() {
   return (
     <div className="container mx-auto p-4 space-y-8">
       <Card>
-        <CardHeader>
+        <CardHeader className="mb-4">
           <CardTitle className="text-3xl font-bold">{project.name}</CardTitle>
-          <CardDescription>
-            <span className="font-semibold">Project Type:</span>{" "}
-            <Badge variant="outline" className="text-base font-normal">
-              {project.projectType.replace("_", " ")}
-            </Badge>
-            {" | "}
-            <span className="font-semibold">Instance Type:</span>{" "}
-            <Badge variant="outline" className="text-base font-normal">
-              {project.instanceType}
+          <CardDescription className="flex items-center justify-start gap-2 py-2">
+            <span className="font-semibold">
+              <ServiceTypeBadge service={project.projectType} />
+            </span>{" "}
+            <Badge variant="secondary" className="h-8 px-4">
+              {project.instanceType || "Free Tier"}
             </Badge>
           </CardDescription>
         </CardHeader>
@@ -139,7 +118,7 @@ export default function ProjectView() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-semibold mb-1">Status</p>
-              {getStatusBadge(project.status.toLowerCase())}
+              <ProjectStatusBadge status={project.status} />
             </div>
             <div>
               <p className="text-sm font-semibold mb-1">Deployment URL</p>
@@ -156,30 +135,51 @@ export default function ProjectView() {
             <div>
               <p className="text-sm font-semibold mb-1">Repository</p>
               <a
-                href={project.repoUrl}
+                href={
+                  deployments &&
+                  deployments.length &&
+                  deployments[0]?.data?.repoUrl
+                }
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-blue-500 hover:underline flex items-center"
               >
                 <GitBranch className="w-4 h-4 mr-1" />
-                {project.repoUrl}
+                {deployments &&
+                  deployments.length &&
+                  deployments[0]?.data?.repoUrl}
               </a>
             </div>
           </div>
-          <div className="flex justify-end space-x-2">
+        </CardContent>
+        <CardFooter>
+          <p className="text-sm text-muted-foreground">
+            Created on {new Date(project.createdAt).toLocaleString()}
+          </p>
+          <div className="ms-auto flex justify-end space-x-2">
             {(project.status === ProjectStatus.DEPLOYED ||
               project.status === ProjectStatus.DEPLOYING) && (
-              <Button variant="outline" onClick={handleStopDeployment}>
-                <StopCircle className="w-4 h-4 mr-2" />
-                Stop
+              <Button variant="destructive" onClick={handleStopDeployment}>
+                {stopLoading ? (
+                  <Loader2 className="w-4 h-4 mr-2" />
+                ) : (
+                  <>
+                    <StopCircle className="w-4 h-4 mr-2" />
+                    Stop
+                  </>
+                )}
               </Button>
             )}
-            {project.status === ProjectStatus.STOPPED && (
-              <Button variant="default" onClick={handleStart}>
-                <Play className="w-4 h-4 mr-2" />
-                Start
-              </Button>
-            )}
+            {
+              //   project.status === ProjectStatus.STOPPED && (
+              //   <Button variant="default" onClick={handleStart}>
+              //     <Play className="w-4 h-4 mr-2" />
+              //     Start
+              //   </Button>
+              // )
+            }
+
+            {deployments && <RollbackBtn projectId={project.id} />}
 
             {deployments && deployments.length > 0 && (
               <RedeployBtn
@@ -192,20 +192,9 @@ export default function ProjectView() {
                 }}
               />
             )}
-
-            <Button variant="outline" onClick={handleRollback}>
-              <RotateCcw className="w-4 h-4 mr-2" />
-              Rollback
-            </Button>
           </div>
-        </CardContent>
-        <CardFooter>
-          <p className="text-sm text-muted-foreground">
-            Created on {new Date(project.createdAt).toLocaleString()}
-          </p>
         </CardFooter>
       </Card>
-
       <Card>
         <CardHeader>
           <CardTitle className="text-2xl font-bold">Deployments</CardTitle>
@@ -230,7 +219,7 @@ export default function ProjectView() {
                     onClick={() => router.push(`/deployments/${deployment.id}`)}
                   >
                     <TableCell>{deployment.id}</TableCell>
-                    <TableCell>{getStatusBadge(deployment.status)}</TableCell>
+                    <TableCell>{deployment.status}</TableCell>
                     <TableCell className="font-mono">
                       {deployment.data?.commitId}
                     </TableCell>
@@ -244,6 +233,7 @@ export default function ProjectView() {
           </Table>
         </CardContent>
       </Card>
+      {renderAnalyticsCard()}
     </div>
   );
 }

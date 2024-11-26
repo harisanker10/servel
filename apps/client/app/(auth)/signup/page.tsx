@@ -77,6 +77,10 @@ export default function SignupPage() {
     setError(null);
     try {
       const existingUserRes = await checkUserExist(values.email);
+      if (existingUserRes && existingUserRes.exist) {
+        setError("User already exist");
+        return;
+      }
       const data = await sendOtpEmail(values.email);
       if ("expiresIn" in data) {
         startTimer(data.expiresIn as Date);

@@ -1,4 +1,5 @@
 "use client";
+import { checkUserExist } from "@/actions/auth/checkUserExist";
 import updateEmail from "@/actions/user/updateEmail";
 import ErrorCard from "@/components/errorCard";
 import SendOtpBtn from "@/components/otp/sendOtpBtn";
@@ -35,6 +36,11 @@ export default function UpdateEmailBtn() {
 
   const handleUpdateEmail = async () => {
     if (!validate()) return;
+    const existingUser = await checkUserExist(email);
+    if (existingUser && existingUser?.exist) {
+      setError("User already exist");
+      return null;
+    }
     try {
       await updateEmail(email, otp);
       await logout();

@@ -8,6 +8,7 @@ import {
   DeploymentImageUpdateDto,
   ProjectStatus,
   DeploymentStatus,
+  RequestDto,
 } from '@servel/common';
 import { ProjectsService } from '../services/projects.service';
 
@@ -30,7 +31,11 @@ export class DeploymentsUpdatesController {
         return;
       }
       if (data.updates.status || data.updates.deploymentUrl) {
-        if (data.updates.status === ProjectStatus.DEPLOYED) {
+        if (
+          data.updates.status === ProjectStatus.DEPLOYED ||
+          data.updates.status === ProjectStatus.DEPLOYING
+        ) {
+          console.log('updating depl status');
           await this.projectService.updateDeploymentsWithProjectId({
             projectId: deployment.projectId,
             updateAll: { status: DeploymentStatus.stopped },
@@ -49,18 +54,19 @@ export class DeploymentsUpdatesController {
     }
   }
 
-  // @EventPattern(KafkaTopics.requests)
-  // async updateRequests(@Payload() data: { deploymentId: string; ip: string }) {
-  //   this.logger.log({ data });
-  //   try {
-  //     await this.projectRepo.addReq({
-  //       deploymentId: data.deploymentId,
-  //       ip: data.ip,
-  //     });
-  //   } catch (err) {
-  //     this.logger.error(err);
-  //   }
-  // }
+  @EventPattern(KafkaTopics.requests)
+  async updateRequests(@Payload() data: RequestDto) {
+    this.logger.log({ data });
+    const depl = await this.projectService.getDeployment(data.deploymentId);
+    try {
+      await this.projectService.addRequest({
+        ...data,
+        projectId: depl.projectId,
+      });
+    } catch (err) {
+      this.logger.error(err);
+    }
+  }
 
   @EventPattern(KafkaTopics.clusterUpdates)
   async updateCluster(@Payload() data: ClusterUpdatesDto) {

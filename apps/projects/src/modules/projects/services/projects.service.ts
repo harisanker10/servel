@@ -15,6 +15,7 @@ import {
   DeploymentStatus,
   NotFoundException,
   ProjectType,
+  RequestDto,
 } from '@servel/common';
 
 @Injectable()
@@ -108,5 +109,13 @@ export class ProjectsService {
       throw new NotFoundException('Projects not found');
     }
     return projects;
+  }
+
+  async addRequest(req: RequestDto & { projectId: string }) {
+    this.projectRepositroy.addRequest(req);
+  }
+
+  async getRequest(projectId: string) {
+    return this.projectRepositroy.getRequestsOfProject(projectId);
   }
 }

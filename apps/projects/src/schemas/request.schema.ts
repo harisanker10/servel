@@ -1,6 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Types } from 'mongoose';
 import { BaseObject } from './baseObject';
+import { ProjectStatus, RequestDto } from '@servel/common';
 
 @Schema({
   collection: 'requests',
@@ -20,7 +21,21 @@ export class Request {
   deploymentId: Types.ObjectId;
 
   @Prop({ required: true })
+  projectId: string;
+
+  @Prop({ required: true })
   ip: string;
+
+  @Prop()
+  method: string;
+  @Prop()
+  url: string;
+  @Prop()
+  userAgent: string;
+  @Prop()
+  referer: string;
+  @Prop()
+  timestamp: string;
 }
 
 export type RequestObject = Request & BaseObject;

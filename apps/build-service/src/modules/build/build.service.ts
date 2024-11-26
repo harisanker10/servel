@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import {
+  DeploymentStatus,
   InstanceType,
   ProjectType,
   StaticSiteData,
@@ -15,6 +16,7 @@ import { cloneRepository } from 'src/utils/cloneRepo';
 import { StaticSiteDeployment } from 'src/deploymentStrategy/staticSiteStrategy';
 import { S3Service } from 'src/services/s3.service';
 import { join } from 'path';
+import * as k8s from '@kubernetes/client-node';
 
 @Injectable()
 export class BuildService {
@@ -87,7 +89,7 @@ export class BuildService {
     });
   }
 
-  runImage({
+  async runImage({
     deploymentName,
     deploymentId,
     imageName,
@@ -112,7 +114,7 @@ export class BuildService {
         port: port,
       },
     });
-    applyKubernetesConfiguration(
+    await applyKubernetesConfiguration(
       's' + deploymentId,
       's' + deploymentId,
       imageName,
@@ -158,58 +160,63 @@ export class BuildService {
   //   });
   // }
 
-  private execCommand(command: string, options?: { cwd?: string }): Promise<void> {
-  return new Promise((resolve, reject) => {
-    exec(command, options, (err, stdout, stderr) => {
-      if (err) {
-        console.error(`Error executing command "${command}":`, stderr);
-        return reject(err);
-      }
-      console.log(`Command "${command}" output:`, stdout);
-      resolve();
+  private execCommand(
+    command: string,
+    options?: { cwd?: string },
+  ): Promise<void> {
+    return new Promise((resolve, reject) => {
+      exec(command, options, (err, stdout, stderr) => {
+        if (err) {
+          console.error(`Error executing command "${command}":`, stderr);
+          return reject(err);
+        }
+        console.log(`Command "${command}" output:`, stdout);
+        resolve();
+      });
     });
-  });
-}
-
+  }
 
   async buildStaticSite({
-  data,
-  deploymentId,
-}: {
-  data: StaticSiteData;
-  deploymentId: string;
-}): Promise<string> {
-  const repoPath = `./repositories/${deploymentId}`;
-  const distDir = join(repoPath, data.outDir);
+    data,
+    deploymentId,
+  }: {
+    data: StaticSiteData;
+    deploymentId: string;
+  }): Promise<string> {
+    const repoPath = `./repositories/${deploymentId}`;
+    const distDir = join(repoPath, data.outDir);
 
-  try {
-    await this.execCommand(`rm -rf ./repositories`);
+    try {
+      await this.execCommand(`rm -rf ./repositories`);
 
-    await cloneRepository(data.repoUrl, repoPath);
-    console.log(`Repository cloned to ${repoPath}`);
+      await cloneRepository(data.repoUrl, repoPath);
+      console.log(`Repository cloned to ${repoPath}`);
 
-    await this.execCommand('npm install', { cwd: repoPath });
-    console.log('Dependencies installed successfully.');
+      await this.execCommand('npm install', { cwd: repoPath });
+      console.log('Dependencies installed successfully.');
 
-    await this.execCommand(data.buildCommand, { cwd: repoPath });
-    console.log(`Build completed successfully. Output directory: ${distDir}`);
+      await this.execCommand(data.buildCommand, { cwd: repoPath });
+      console.log(`Build completed successfully. Output directory: ${distDir}`);
 
-    await this.S3.uploadDir(
-      distDir,
-      `./repositories/${deploymentId}/${data.outDir}`,
-      `repositories/${deploymentId}`
-    );
-    console.log(`Static site files uploaded to S3 for deployment ${deploymentId}`);
+      await this.S3.uploadDir(
+        distDir,
+        `./repositories/${deploymentId}/${data.outDir}`,
+        `repositories/${deploymentId}`,
+      );
+      console.log(
+        `Static site files uploaded to S3 for deployment ${deploymentId}`,
+      );
 
-    this.kafkaService.emitStaticSiteDataUpdates({
-      deploymentId,
-      s3Path: `repositories/${deploymentId}`,
-    });
+      this.kafkaService.emitStaticSiteDataUpdates({
+        deploymentId,
+        s3Path: `repositories/${deploymentId}`,
+        status: DeploymentStatus.active,
+      });
 
-    return `repositories/${deploymentId}`;
-  } catch (err) {
-    console.error('Error during static site build process:', err);
-    throw err; 
+      return `repositories/${deploymentId}`;
+    } catch (err) {
+      console.error('Error during static site build process:', err);
+      throw err;
+    }
   }
-}
 }

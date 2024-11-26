@@ -15,6 +15,10 @@ import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { getAllProjects } from "@/actions/deployments/getUserDeployments";
 import { useRouter } from "next/navigation";
+import ServiceTypeBadge, {
+  ProjectStatusBadge,
+} from "@/components/serviceTypeBadge";
+import { formatDate } from "@/lib/utils/formatDate";
 
 export default function DeploymentsPage() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -35,9 +39,6 @@ export default function DeploymentsPage() {
 
   return (
     <div className="flex  flex-col  mx-auto w-3/4 gap-8 p-6 sm:p-10">
-      <h1 className="flex-1 shrink-0 whitespace-nowrap text-2xl font-semibold tracking-tight sm:grow-0">
-        Deployments
-      </h1>
       <div className="grid gap-6">
         <Card>
           <CardHeader>
@@ -67,6 +68,7 @@ export default function DeploymentsPage() {
                   <TableHead>Status</TableHead>
                   <TableHead>URL</TableHead>
                   <TableHead>Created</TableHead>
+                  <TableHead>Type</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -82,7 +84,7 @@ export default function DeploymentsPage() {
                       {deployment?.name}
                     </TableCell>
                     <TableCell>
-                      <Badge>{deployment.status}</Badge>
+                      <ProjectStatusBadge status={deployment.status} />
                     </TableCell>
                     <TableCell>
                       {deployment.deploymentUrl ? (
@@ -99,44 +101,14 @@ export default function DeploymentsPage() {
                         "-"
                       )}
                     </TableCell>
-                    <TableCell>{deployment.createdAt}</TableCell>
+                    <TableCell>{formatDate(deployment.createdAt)}</TableCell>
+                    <TableCell>
+                      <ServiceTypeBadge service={deployment.projectType} />
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-xl">Repositories</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex-1 my-5">
-              <Input
-                id="search-repos"
-                placeholder="Search repositories..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-              {
-                // filteredRepos.map((_o => (
-                // <div
-                //     key={repo.id}
-                //     className="flex flex-col items-start gap-2 rounded-lg border p-4 shadow-sm"
-                //   >
-                //     <div className="text-lg font-medium">{repo.name}</div>
-                //     <div className="text-sm text-muted-foreground">
-                //       Last updated: {repo.lastUpdated}
-                //     </div>
-                //     <Button variant="outline" size="sm">
-                //       Deploy
-                //     </Button>
-                //   </div>
-                // ))
-              }
-            </div>
           </CardContent>
         </Card>
       </div>

@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { DeploymentStatus, ProjectType } from '@servel/common';
+import { DeploymentStatus, ProjectType, RequestDto } from '@servel/common';
 import { Model } from 'mongoose';
 import { Deployment } from 'src/schemas/deployment.schema';
 import { Env } from 'src/schemas/env.schema';
@@ -148,5 +148,15 @@ export class ProjectRepository implements IProjectsRepository {
         { new: true },
       )
       .then((doc) => doc?.toObject() as IProject);
+  }
+
+  async addRequest(data: RequestDto & { projectId: string }) {
+    return new this.reqModel({ ...data }).save().then((doc) => doc.toObject());
+  }
+
+  async getRequestsOfProject(projectId: string) {
+    return this.reqModel
+      .find({ projectId })
+      .then((docs) => docs.length && docs.map((doc) => doc.toObject()));
   }
 }

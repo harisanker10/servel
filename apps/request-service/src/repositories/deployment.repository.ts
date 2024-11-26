@@ -22,20 +22,25 @@ export class DeploymentsRepository {
     ),
   ) {
     console.log('creating new depl', { createDeploymentDto });
-    return (
-      new this.deploymentsModel({ ...createDeploymentDto })
-        .save()
-        //@ts-ignore
-        .then((doc) => doc?.toObject() as DeploymentObject)
-    );
+    return new this.deploymentsModel({ ...createDeploymentDto })
+      .save()
+      .then((doc) => doc?.toObject() as DeploymentObject);
   }
 
   async getDeployment(deploymentId: string) {
-    return (
-      this.deploymentsModel
-        .findOne({ deploymentId })
-        //@ts-ignore
-        .then((doc) => doc?.toObject() as DeploymentObject | undefined)
-    );
+    return this.deploymentsModel
+      .findOne({ deploymentId })
+      .then((doc) => doc?.toObject() as DeploymentObject | undefined);
+  }
+
+  async updateDeployment(
+    deploymentId: string,
+    updateDto: Partial<
+      Omit<DeploymentObject, 'id' | 'createdAt' | 'updatedAt'>
+    >,
+  ): Promise<DeploymentObject | undefined> {
+    return this.deploymentsModel
+      .findOneAndUpdate({ deploymentId }, updateDto, { new: true })
+      .then((doc) => doc?.toObject() as DeploymentObject | undefined);
   }
 }

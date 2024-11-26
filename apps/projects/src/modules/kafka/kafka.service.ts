@@ -6,7 +6,8 @@ import {
   DeploymentUpdatesDto,
   KafkaTopics,
   ProjectType,
-  deploymentQueueDto,
+  DeploymentQueueDto,
+  StaticSiteUpdatesDto,
 } from '@servel/common';
 
 @Injectable()
@@ -27,7 +28,11 @@ export class KafkaService {
     this.kafkaClient.emit(KafkaTopics.deploymentUpdates, updates);
   }
 
-  emitToDeploymentQueue(deployment: deploymentQueueDto) {
+  emitStatiSiteUpdates(updates: StaticSiteUpdatesDto) {
+    this.kafkaClient.emit(KafkaTopics.staticSiteUpdates, updates);
+  }
+
+  emitToDeploymentQueue(deployment: DeploymentQueueDto) {
     this.kafkaClient.emit(KafkaTopics.deploymentQueue, deployment);
   }
 }

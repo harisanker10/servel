@@ -24,7 +24,7 @@ export default function SideBar() {
         <TooltipProvider>
           <Link
             href="/profile"
-            className={`flex h-9 w-9 ${path === "/profile" ? activeStyle : inactiveStle} items-center justify-center rounded-lg text-accent-foreground transition-colors hover:text-foreground md:h-8 md:w-8`}
+            className={`flex h-9 w-9 ${path.includes("profile") ? activeStyle : inactiveStle} items-center justify-center rounded-lg text-accent-foreground transition-colors hover:text-foreground md:h-8 md:w-8`}
           >
             <UserIcon className="h-5 w-5 transition-all group-hover:scale-110" />
             <span className="sr-only">Profile</span>
@@ -33,7 +33,7 @@ export default function SideBar() {
             <TooltipTrigger asChild>
               <Link
                 href="/projects"
-                className={`flex h-9 w-9 ${path === "projects" ? activeStyle : inactiveStle} items-center justify-center rounded-lg text-accent-foreground transition-colors hover:text-foreground md:h-8 md:w-8`}
+                className={`flex h-9 w-9 ${path.includes("projects") || path.includes("deployments") ? activeStyle : inactiveStle} items-center justify-center rounded-lg text-accent-foreground transition-colors hover:text-foreground md:h-8 md:w-8`}
               >
                 <PackageIcon className="h-6 w-6" />
                 <span className="sr-only">Deployments</span>

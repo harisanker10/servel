@@ -49,6 +49,20 @@ export interface RollbackProjectDto {
   deploymentId: string;
 }
 
+export interface Request {
+  deploymentId: string;
+  ip: string;
+  method: string;
+  url: string;
+  userAgent: string;
+  referer: string;
+  timestamp: string;
+}
+
+export interface Requests {
+  requests: Request[];
+}
+
 export interface CreateEnvDto {
   userId: string;
   name: string;
@@ -219,6 +233,8 @@ export interface ProjectsServiceClient {
 
   updateInstanceType(request: UpdateInstanceTypeDto): Observable<Project>;
 
+  getRequests(request: GetProjectDto): Observable<Requests>;
+
   createDeployment(request: CreateDeploymentDto): Observable<Deployment>;
 
   getDeployments(request: GetDeploymentsDto): Observable<Deployments>;
@@ -233,7 +249,7 @@ export interface ProjectsServiceClient {
 
   retryDeployment(request: GetDeploymentDto): Observable<Deployment>;
 
-  rollbackProject(request: RollbackProjectDto): Observable<Deployment>;
+  rollbackProject(request: GetDeploymentDto): Observable<Deployment>;
 }
 
 export interface ProjectsServiceController {
@@ -251,6 +267,8 @@ export interface ProjectsServiceController {
 
   updateInstanceType(request: UpdateInstanceTypeDto): Promise<Project> | Observable<Project> | Project;
 
+  getRequests(request: GetProjectDto): Promise<Requests> | Observable<Requests> | Requests;
+
   createDeployment(request: CreateDeploymentDto): Promise<Deployment> | Observable<Deployment> | Deployment;
 
   getDeployments(request: GetDeploymentsDto): Promise<Deployments> | Observable<Deployments> | Deployments;
@@ -265,7 +283,7 @@ export interface ProjectsServiceController {
 
   retryDeployment(request: GetDeploymentDto): Promise<Deployment> | Observable<Deployment> | Deployment;
 
-  rollbackProject(request: RollbackProjectDto): Promise<Deployment> | Observable<Deployment> | Deployment;
+  rollbackProject(request: GetDeploymentDto): Promise<Deployment> | Observable<Deployment> | Deployment;
 }
 
 export function ProjectsServiceControllerMethods() {
@@ -278,6 +296,7 @@ export function ProjectsServiceControllerMethods() {
       "stopProject",
       "startProject",
       "updateInstanceType",
+      "getRequests",
       "createDeployment",
       "getDeployments",
       "getDeployment",

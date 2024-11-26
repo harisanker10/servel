@@ -35,17 +35,21 @@ export default function ForgotPassword() {
     e.preventDefault();
     setError(null);
     setIsLoading(true);
-    const existingUser = await checkUserExist(email);
-    if (typeof existingUser === "object" && "error" in existingUser) {
-      setError(existingUser.message);
-    } else {
-      if (!existingUser) {
-        console.log("apparaelrkj", existingUser);
-        setError("User doesn't exist.");
-        setIsLoading(false);
-        return;
-      }
-    }
+    try {
+      const existingUser = await checkUserExist(email);
+      console.log({ existingUser });
+      return;
+    } catch (error) {}
+    // if (typeof existingUser === "object" && "error" in existingUser) {
+    //   setError(existingUser.message);
+    // } else {
+    //   if (!existingUser) {
+    //     console.log("apparaelrkj", existingUser);
+    //     setError("User doesn't exist.");
+    //     setIsLoading(false);
+    //     return;
+    //   }
+    // }
     const res = await sendOtpEmail(email);
     if (typeof res === "object" && "error" in res) {
       setError(res.message);

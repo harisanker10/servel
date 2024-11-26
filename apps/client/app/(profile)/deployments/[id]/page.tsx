@@ -28,7 +28,6 @@ export default function DeploymentView() {
   console.log({ params });
 
   useEffect(() => {
-    // Simulating API call to fetch deployment data
     const fetchDeployment = async () => {
       //@ts-ignore
       const deployment = await getDeployment(params.id);
@@ -165,14 +164,14 @@ export default function DeploymentView() {
               <TabsTrigger value="env">Environment Variables</TabsTrigger>
             </TabsList>
             <TabsContent value="details">
-              <Card>
+              <div>
                 <CardHeader>
                   <CardTitle>Deployment Configuration</CardTitle>
                 </CardHeader>
                 <CardContent>
                   {getDeploymentTypeContent(deployment.data)}
                 </CardContent>
-              </Card>
+              </div>
             </TabsContent>
             <TabsContent value="env">
               <Card>
@@ -195,7 +194,8 @@ export default function DeploymentView() {
         <CardFooter>
           <Button onClick={handleRetryDeployment}>
             <RefreshCcw className="w-4 h-4 mr-2" />
-            Retry Deployment
+            Retry and Rollback
+            {}
           </Button>
         </CardFooter>
       </Card>

@@ -8,6 +8,7 @@ import {
   KafkaTopics,
   ProjectStatus,
   ProjectType,
+  StaticSiteUpdatesDto,
 } from '@servel/common';
 
 @Injectable()
@@ -48,7 +49,7 @@ export class KafkaService {
     this.kafkaClient.emit(KafkaTopics.imageUpdates, data);
   }
 
-  emitStaticSiteDataUpdates(data: { s3Path: string; deploymentId: string }) {
+  emitStaticSiteDataUpdates(data: StaticSiteUpdatesDto) {
     this.kafkaClient.emit(KafkaTopics.staticSiteUpdates, data);
   }
 }
