@@ -1,0 +1,215 @@
+syntax = "proto3";
+
+package projects;
+
+
+// Services
+
+service ProjectsService {
+  rpc GetAllProjects(GetUserDto) returns (Projects) {}
+  rpc GetProject(GetProjectDto) returns (PopulatedProject) {}
+  rpc CreateProject(CreateProjectDto) returns (PopulatedProject) {}
+  rpc DeleteProject(GetProjectDto) returns (Project) {}
+  
+  rpc StopProject(GetProjectDto) returns (Project) {}
+  rpc StartProject(GetProjectDto) returns (Project) {}
+  rpc UpdateInstanceType(UpdateInstanceTypeDto) returns (Project) {}
+  rpc RollbackProject(GetDeploymentDto) returns (Deployment) {}
+}
+
+service DeploymentService {
+  rpc CreateDeployment(CreateDeploymentDto) returns (Deployment) {}
+  rpc GetDeployments(GetDeploymentsDto) returns (Deployments) {}
+  rpc GetDeployment(GetDeploymentDto) returns (Deployment) {}
+  rpc StopDeployment(GetDeploymentDto) returns (Deployment) {}
+  rpc StartDeployment(GetDeploymentDto) returns (Deployment) {}
+  rpc DeleteDeployment(GetDeploymentDto) returns (Deployment) {}
+  rpc RetryDeployment(GetDeploymentDto) returns (Deployment) {}
+  rpc GetLogs(GetDeploymentDto) returns (DeploymentLogs) {}
+}
+
+service EnvService {
+  rpc GetEnvs(GetDeploymentDto) returns (Envs) {}
+  rpc addEnvs(GetDeploymentDto) returns (Envs) {}
+  rpc RemoveEnvs(GetDeploymentsDto) returns (Envs) {}
+}
+
+// Project messages
+
+message Project {
+  string id = 1;
+  string name = 2;
+  ProjectStatus status = 3;
+  string createdAt = 5;
+  string updatedAt = 6;
+  optional string deploymentUrl = 7;
+  ProjectType projectType = 8;
+  InstanceType instanceType = 9;
+}
+message CreateProjectDto {
+  string name = 1;
+  ProjectType projectType = 2;
+  InstanceType instanceType = 3;
+  string userId = 4;
+  oneof details {
+  ImageData imageData = 5;
+  WebServiceData webServiceData = 6;
+  StaticSiteData staticSiteData = 7;
+  }
+  repeated Env env = 8;
+}
+
+message GetUserDto {
+  string userId = 1;
+}
+
+message RollbackProjectDto {
+  string projectId = 1;
+  string deploymentId = 2;
+}
+
+
+message GetProjectDto {
+  string projectId = 1;
+}
+
+message PopulatedProject {
+  string id = 1;
+  string name = 2;
+  string status = 3;
+  string createdAt = 5;
+  string updatedAt = 6;
+  optional string deploymentUrl = 7;
+  ProjectType projectType = 8;
+  repeated Deployment deployments = 9;
+}
+
+
+message Projects {
+  repeated Project projects = 1;
+}
+
+enum ProjectType {
+  WEB_SERVICE = 0;
+  STATIC_SITE = 1;
+  IMAGE = 2;
+}
+
+enum ProjectStatus {
+  QUEUED = 0;
+  BUILDING = 1;
+  DEPLOYING = 2;
+  DEPLOYED = 3;
+  FAILED = 4;
+  STOPPED = 5;
+}
+
+enum InstanceType {
+  TIER_0 = 0;
+  TIER_1 = 1;
+  TIER_2 = 2;
+}
+
+message UpdateInstanceTypeDto {
+  string id = 1;
+  InstanceType instanceType = 2;
+}
+
+message UpdateDeploymentDto {
+  string id = 1;
+  Updates updates = 2;
+}
+
+message Updates {
+  optional string repoName = 1;
+  string userId = 2;
+  oneof type {
+  ImageData imageData = 3;
+  WebServiceData webServiceData = 4;
+  StaticSiteData staticSiteData = 5;
+  }
+  repeated Env envs = 6; 
+}
+
+
+// Deployment messages
+message Deployment {
+  string id = 1;
+  string createdAt = 2;
+  string updatedAt = 3;
+  string status = 4;
+  oneof type {
+  ImageData imageData = 5;
+  WebServiceData webServiceData = 6;
+  StaticSiteData staticSiteData = 7;
+  }
+}
+message Deployments {
+  repeated Deployment deployments = 1;
+}
+message DeploymentLogs {
+  optional string deploymentBuildLog = 1;
+  optional string deploymentRunLog = 2;
+}
+message GetDeploymentDto { string deploymentId = 1; }
+message GetDeploymentsDto { string projectId = 1; }
+
+message CreateDeploymentDto {
+  string projectId = 1;
+  string userId = 2;
+  repeated Env env = 3;
+  oneof type {
+  ImageData imageData = 4;
+  WebServiceData webServiceData = 5;
+  StaticSiteData staticSiteData = 6;
+}
+}
+
+message ImageData {
+  string imageUrl = 1;
+  optional string accessToken = 2;
+  int32 port = 3;
+}
+
+message WebServiceData {
+  string repoUrl = 1;
+  string runCommand = 2;
+  string buildCommand = 3;
+  optional string accessToken = 4;
+  optional string branch = 5;
+  optional string commitId = 6;
+  int32 port = 7;
+}
+
+message StaticSiteData {
+  string repoUrl = 1;
+  string outDir = 2;
+  string buildCommand = 3;
+  optional string accessToken = 4;
+  optional string branch = 5;
+  optional string commitId = 6;
+}
+
+message Request {
+  string deploymentId = 1;
+  string ip = 2;
+  string method = 3;
+  string url = 4;
+  string userAgent = 5;
+  string referer = 6;
+  string timestamp = 7;
+}
+
+message Requests {
+  repeated Request requests = 1;
+}
+
+// Env messages
+message Env {
+  string name = 1;
+  string value = 2;
+}
+
+message Envs {
+  repeated Env envs = 1;
+}
