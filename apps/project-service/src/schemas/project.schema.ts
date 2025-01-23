@@ -15,7 +15,7 @@ import { Types } from 'mongoose';
   },
 })
 export class Project {
-  @Prop()
+  @Prop({ required: true, unique: true })
   name: string;
 
   @Prop({

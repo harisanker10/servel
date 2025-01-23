@@ -26,9 +26,11 @@ import {
   ResetPasswordDto,
   SignupRequestDto,
   SignupResponseDto,
+} from '@servel/common/api-gateway-dto';
+import {
   resetPasswordSchema,
   signupAuthSchema,
-} from '@servel/common';
+} from '@servel/common/zodSchemas';
 import { AuthType, AuthType as RPCAuthType, User } from '@servel/proto/users';
 import { GoogleAuthGuard } from './guards/googleAuth.guard';
 import { OtpGuard } from './guards/otp.guard';
@@ -37,7 +39,6 @@ import { GithubAuthGuard } from './guards/githubAuth.guard';
 import { AuthService } from './auth.service';
 import { UserService } from '../users/users.service';
 import { JWTGuard } from './guards/jwt.guard';
-import { access } from 'fs';
 
 @UseInterceptors(UserControllerErrorHandlingInterceptor)
 @Controller('auth')
@@ -103,7 +104,7 @@ export class AuthController {
         user = await this.userService.createUserWithOAuth({
           email,
           avatar,
-          authType: fullname,
+          authType: AuthType.GITHUB,
           accessToken,
           refreshToken,
           githubId,
@@ -130,7 +131,7 @@ export class AuthController {
     }
     if (user && token) {
       res.send(
-        `<script>window.opener.postMessage('${JSON.stringify({ user, token })}', 'http://localhost:3000');window.close()</script>`,
+        `<script>window.opener.postMessage('${JSON.stringify({ user, token })}', 'http://localhost:3000/projects');window.close()</script>`,
       );
     }
   }
@@ -213,7 +214,7 @@ export class AuthController {
     //@ts-expect-error token undefined
     if (user && token) {
       res.send(
-        `<script>window.opener.postMessage('${JSON.stringify({ user, token })}', 'http://localhost:3000')</script>`,
+        `<script>window.opener.postMessage('${JSON.stringify({ user, token })}', 'http://localhost:3000/projects')</script>`,
       );
     }
   }

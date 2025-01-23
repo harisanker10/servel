@@ -1,10 +1,11 @@
-import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import { S3Client } from '@aws-sdk/client-s3';
 import { Injectable } from '@nestjs/common';
-import { ReadStream, createReadStream } from 'fs';
-import { relative } from 'path';
+import { createReadStream } from 'fs';
+import { stat } from 'fs/promises';
+import path, { basename, join, relative } from 'path';
 import { ENV } from 'src/config/env';
 import { getAllFilePaths } from 'src/utils/getAllFilePaths';
-import { Readable } from 'stream';
+import { Upload } from '@aws-sdk/lib-storage';
 
 @Injectable()
 export class S3Service {
@@ -27,37 +28,32 @@ export class S3Service {
       },
       region: ENV.S3_REGION,
     });
-    // this.uploadDir('./proto', '');
   }
 
-  async streamUpload(key: string, body: ReadStream | Readable) {
-    const command = new PutObjectCommand({
-      Bucket: this.bucket,
-      Key: key,
-      Body: body,
+  async streamUpload(key: string, body: any) {
+    const upload = new Upload({
+      client: this.client,
+      params: {
+        Bucket: this.bucket,
+        Key: key,
+        Body: body,
+      },
     });
-    return this.client.send(command);
+    return upload.done();
   }
 
-  // async uploadDir(key: string, offset: string) {
-  //   const allFiles = await getAllFilePaths(key);
-  //   console.log({ allFiles });
-  //   for (const file of allFiles) {
-  //     const readStream = createReadStream(file);
-  //     const sanitizedPath = relative(offset, file).replace(/\\/g, '/');
-  //     await this.streamUpload(sanitizedPath, readStream);
-  //   }
-  // }
-  //
-  //
-  async uploadDir(directoryPath: string, basePath: string, prefix: string) {
-    const allFiles = await getAllFilePaths(directoryPath);
-    console.log({ allFiles });
+  async uploadDir(directoryPath: string, s3BasePath: string) {
+    const dirStats = await stat(directoryPath);
+    if (!dirStats.isDirectory()) {
+      throw new Error('Not a valid directory');
+    }
 
+    const dirName = basename(directoryPath);
+    const allFiles = await getAllFilePaths(directoryPath);
     for (const file of allFiles) {
       try {
-        const relativePath = relative(basePath, file).replace(/\\/g, '/'); // Ensure forward slashes for S3 compatibility
-        const s3Key = `${prefix}/${relativePath}`;
+        const relativePathAfterDir = file.split(directoryPath)[1];
+        const s3Key = join(s3BasePath, relativePathAfterDir);
         const readStream = createReadStream(file);
         await this.streamUpload(s3Key, readStream);
         console.log(`Uploaded: ${s3Key}`);
@@ -65,5 +61,9 @@ export class S3Service {
         console.error(`Failed to upload ${file}:`, error);
       }
     }
+  }
+
+  getDeploymentDirKey(deploymentId: string) {
+    return `deployments/${deploymentId}`;
   }
 }

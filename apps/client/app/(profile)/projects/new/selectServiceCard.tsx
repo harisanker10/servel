@@ -1,8 +1,7 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
 import {
-  Card,
+  Card as div,
   CardContent,
   CardDescription,
   CardHeader,
@@ -12,13 +11,14 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { ProjectType } from "@servel/common/types";
 import { Container, PanelTop, Server } from "lucide-react";
+import { useState } from "react";
 
-export function SelectServiceCard({
-  service,
-  setService,
+export function SelectProjectTypeCard({
+  projectType,
+  onChange,
 }: {
-  service: string;
-  setService: any;
+  projectType: ProjectType;
+  onChange: (service: ProjectType) => void;
 }) {
   const serviceTypes = [
     {
@@ -46,7 +46,7 @@ export function SelectServiceCard({
 
   return (
     <>
-      <Card className="py-2">
+      <div className="py-2">
         <CardHeader>
           <CardTitle className="text-l">Chose a service type</CardTitle>
           <CardDescription>
@@ -54,14 +54,15 @@ export function SelectServiceCard({
           </CardDescription>
         </CardHeader>
         <RadioGroup
-          defaultValue={service}
-          onValueChange={(value) => setService(value)}
+          name="projectType"
+          defaultValue={ProjectType.WEB_SERVICE}
+          onValueChange={(value) => onChange(value as ProjectType)}
         >
           <CardContent className="grid grid-cols-1 gap-2 p-4 md:grid-cols-3">
             {serviceTypes.map((type) => (
               <Label htmlFor={type.value}>
-                <Card
-                  className={`shadow-sm hover:bg-secondary ${type.value === service ? "bg-secondary" : ""}`}
+                <div
+                  className={`shadow-sm border rounded-lg hover:bg-secondary ${type.value === projectType ? "bg-secondary" : ""}`}
                 >
                   <CardHeader className="flex flex-row items-center">
                     <span className="px-3 m-0">{type.icon}</span>
@@ -77,12 +78,12 @@ export function SelectServiceCard({
                   <CardContent>
                     <CardDescription>{type.description}</CardDescription>
                   </CardContent>
-                </Card>
+                </div>
               </Label>
             ))}
           </CardContent>
         </RadioGroup>
-      </Card>
+      </div>
     </>
   );
 }

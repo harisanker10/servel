@@ -20,6 +20,7 @@ import {
 import { getDeployment } from "@/actions/deployments/getDeployment";
 import { useParams, useRouter } from "next/navigation";
 import { retryDeployment } from "@/actions/deployments/retryDeployment";
+import { getLogs } from "@/actions/deployments/getLogs";
 
 export default function DeploymentView() {
   const [deployment, setDeployment] = useState<Deployment | null>(null);
@@ -38,6 +39,20 @@ export default function DeploymentView() {
     fetchDeployment();
   }, []);
 
+  useEffect(() => {
+    if (deployment && deployment.status === DeploymentStatus.ACTIVE) {
+      const fetchLogs = async () => {
+        try {
+          const logs = await getLogs(deployment.id);
+          console.log({ logs });
+        } catch (error) {
+          console.error("Error fetching logs:", error);
+        }
+      };
+
+      fetchLogs();
+    }
+  }, [deployment]);
   const handleRetryDeployment = async () => {
     if (deployment?.id) {
       await retryDeployment(deployment?.id);

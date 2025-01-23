@@ -21,23 +21,16 @@ export enum ProjectStatus {
   STOPPED = "STOPPED",
 }
 
-export interface PopulatedProject<T extends DeploymentData = DeploymentData> {
-  id: string;
-  name: string;
-  status: string;
-  createdAt: string;
-  updatedAt: string;
-  deploymentUrl: string;
-  projectType: ProjectType;
-  deployments: Deployment<T>[];
+export interface PopulatedProject extends Project {
+  deployments: Deployment[];
 }
 
 export type Project = {
   id: string;
   name: string;
-  status: string;
+  status: ProjectStatus;
+  deploymentUrl?: string;
+  projectType: ProjectType;
   createdAt: string;
   updatedAt: string;
-  deploymentUrl: string;
-  projectType: ProjectType;
 };

@@ -8,6 +8,9 @@ import {
   StickyNote,
   XCircle,
 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { getProject } from "@/actions/projects/getProject";
+import { clear } from "console";
 
 export default function ServiceTypeBadge({
   service,
@@ -41,7 +44,13 @@ export default function ServiceTypeBadge({
   }
 }
 
-export function ProjectStatusBadge({ status }: { status: ProjectStatus }) {
+export function ProjectStatusBadge({
+  projectId,
+  defaultStatus,
+}: {
+  projectId: string;
+  defaultStatus?: ProjectType;
+}) {
   const variants = {
     DEPLOYED: "success",
     DEPLOYING: "success",
@@ -51,6 +60,31 @@ export function ProjectStatusBadge({ status }: { status: ProjectStatus }) {
     STOPPED: "warning",
   };
 
+  const [status, setStatus] = useState(defaultStatus || null);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      getProject(projectId).then((project) => {
+        if (project?.status) {
+          if (status !== project.status) {
+            setStatus(project.status);
+          }
+          if (
+            [
+              ProjectStatus.FAILED,
+              ProjectStatus.DEPLOYED,
+              ProjectStatus.STOPPED,
+            ].includes(project.status)
+          ) {
+            clearInterval(interval);
+          }
+        }
+      });
+    }, 3000);
+
+    return () => interval && clearInterval(interval);
+  }, []);
+
   const icons = {
     DEPLOYED: <CheckCircle className="mr-2 h-4 w-4 text-success-foreground" />,
     DEPLOYING: (
@@ -58,19 +92,21 @@ export function ProjectStatusBadge({ status }: { status: ProjectStatus }) {
     ),
     FAILED: <XCircle className="mr-2 h-4 w-4 text-destructive-foreground" />,
     BUILDING: <Loader2 className="mr-2 h-4 w-4 animate-spin text-foreground" />,
-    QUEUED: <Loader2 className="mr-2 h-4 w-4 animate-spin text-" />,
+    QUEUED: <Loader2 className="mr-2 h-4 w-4 animate-spin " />,
     STOPPED: <PauseCircle className="mr-2 h-4 w-4 text-muted-foreground" />,
   };
 
   const capitalize = (str: string) =>
     str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
 
-  return (
+  return status ? (
     <Badge
       variant={variants[status] || "success"}
       className="flex items-center"
     >
       {icons[status]} {capitalize(status.toLowerCase())}
     </Badge>
+  ) : (
+    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
   );
 }

@@ -8,22 +8,15 @@ export async function cloneRepository(
   gitUrl: string,
   repoPath: string,
 ): Promise<void> {
+  const repoStat = await stat(repoPath);
+  if (repoStat.isDirectory()) {
+    await rm(repoPath, { recursive: true, force: true });
+  }
   return new Promise(async (resolve, reject) => {
-    try {
-      const repoStat = await stat(repoPath);
-      if (repoStat.isDirectory()) {
-        console.log(`Removing existing directory at ${repoPath}`);
-        await rm(repoPath, { recursive: true, force: true });
-      }
-    } catch (error) {
-      console.log('Error removing repoPath:', repoPath, 'err:', error);
-    }
     const cloneProcess = spawn('git', ['clone', gitUrl, repoPath]);
-
     cloneProcess.stdout.on('data', (data) => {
       logger.log(data.toString());
     });
-
     cloneProcess.on('close', (code) => {
       if (code !== 0) {
         reject(new Error(`Git clone failed with code ${code}`));

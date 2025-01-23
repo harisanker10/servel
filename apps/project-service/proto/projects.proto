@@ -12,9 +12,11 @@ service ProjectsService {
   rpc DeleteProject(GetProjectDto) returns (Project) {}
   
   rpc StopProject(GetProjectDto) returns (Project) {}
-  rpc StartProject(GetProjectDto) returns (Project) {}
+  rpc StartProject(GetDeploymentDto) returns (Project) {}
   rpc UpdateInstanceType(UpdateInstanceTypeDto) returns (Project) {}
   rpc RollbackProject(GetDeploymentDto) returns (Deployment) {}
+  rpc RedeployProject(CreateDeploymentDto) returns (Deployment) {}
+  rpc RetryAndDeployProject(GetDeploymentDto) returns(Deployment) {}
 }
 
 service DeploymentService {

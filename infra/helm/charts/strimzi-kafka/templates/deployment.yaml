@@ -1,0 +1,114 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: kafka
+# ---
+# apiVersion: kafka.strimzi.io/v1beta2
+# kind: KafkaNodePool
+# metadata:
+#   name: dual-role
+#   labels:
+#     strimzi.io/cluster: kafka-cluster
+# spec:
+#   replicas: 1
+#   roles:
+#     - controller
+#     - broker
+#   storage:
+#     type: jbod
+#     volumes:
+#       - id: 0
+#         type: persistent-claim
+#         size: 100Gi
+#         deleteClaim: false
+# ---
+# apiVersion: kafka.strimzi.io/v1beta2
+# kind: Kafka
+# metadata:
+#   name: kafka-cluster
+#   annotations:
+#     strimzi.io/node-pools: enabled
+#     strimzi.io/kraft: enabled
+# spec:
+#   kafka:
+#     replicas: 1
+#     version: 3.8.0
+#     listeners:
+#       - name: plain
+#         port: 9092
+#         type: internal
+#         tls: false
+#       - name: external
+#         port: 9094
+#         type: nodeport
+#         tls: false
+#         configuration:
+#           bootstrap:
+#             nodePort: 32400
+#           brokers:
+#             - broker: 0
+#               nodePort: 32000
+#             - broker: 1
+#               nodePort: 32001
+#             - broker: 2
+#               nodePort: 32002
+#     config:
+#       offsets.topic.replication.factor: 1
+#       transaction.state.log.replication.factor: 1
+#       transaction.state.log.min.isr: 1
+#       default.replication.factor: 1
+#       min.insync.replicas: 1
+#   entityOperator:
+#     topicOperator: {}
+#     userOperator: {}
+---
+apiVersion: kafka.strimzi.io/v1beta2
+kind: Kafka
+metadata:
+  name: kafka-cluster
+spec:
+  kafka:
+    version: 3.6.0
+    replicas: 3
+    listeners:
+      - name: plain
+        port: 9092
+        type: internal
+        tls: false
+      - name: external
+        port: 9094
+        type: nodeport
+        tls: false
+        configuration:
+          bootstrap:
+            nodePort: 32400
+          brokers:
+            - broker: 0
+              nodePort: 32401
+            - broker: 1
+              nodePort: 32402
+            - broker: 2
+              nodePort: 32403
+    config:
+      offsets.topic.replication.factor: 3
+      transaction.state.log.replication.factor: 3
+      transaction.state.log.min.isr: 2
+      default.replication.factor: 3
+      min.insync.replicas: 2
+      inter.broker.protocol.version: "3.6"
+    storage:
+      type: jbod
+      volumes:
+        - id: 0
+          type: persistent-claim
+          size: 100Gi
+          deleteClaim: false
+  zookeeper:
+    replicas: 1
+    storage:
+      type: persistent-claim
+      size: 100Gi
+      deleteClaim: false
+  entityOperator:
+    topicOperator: {}
+    userOperator: {}

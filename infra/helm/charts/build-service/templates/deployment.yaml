@@ -12,6 +12,7 @@ spec:
       labels:
         app: {{ .Values.name }}
     spec:
+      serviceAccountName: build-service
       containers:
         - name: {{ .Values.name }}
           image: {{ .Values.image}}

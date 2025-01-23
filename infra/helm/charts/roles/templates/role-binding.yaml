@@ -1,0 +1,13 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: build-service-deployments-binding
+  namespace: deployments
+subjects:
+  - kind: ServiceAccount
+    name: build-service # ServiceAccount name
+    namespace: default # Namespace of the ServiceAccount
+roleRef:
+  kind: ClusterRole # Reference the ClusterRole
+  name: build-service-manager # Name of the ClusterRole
+  apiGroup: rbac.authorization.k8s.io

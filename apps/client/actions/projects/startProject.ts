@@ -2,9 +2,9 @@
 
 import { $api } from "@/http";
 
-export async function startProject(projectId: string) {
+export async function startProject(deploymentId: string) {
   const res = await $api
-    .post(`/projects/start`, { projectId })
+    .post(`/projects/start`, { deploymentId })
     .then((res) => res.data)
     .catch((err) => {
       console.log(err);

@@ -4,11 +4,8 @@ import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import 'dotenv/config';
 
 const kafkaUrl = process.env.KAFKA_URL;
-const kafkaUsername = process.env.KAFKA_USERNAME;
-const kafkaPassword = process.env.KAFKA_PASSWORD;
 
 async function bootstrap() {
-  console.log({ kafkaUrl });
   const app = await NestFactory.create(AppModule);
   app.connectMicroservice<MicroserviceOptions>({
     transport: Transport.KAFKA,

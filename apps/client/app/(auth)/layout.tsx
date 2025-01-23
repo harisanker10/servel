@@ -10,7 +10,7 @@ export default async function LoginLayout({
   const user = await getUser();
   if (user) {
     console.log({ user });
-    redirect("/profile");
+    redirect("/projects");
   }
   return (
     <>

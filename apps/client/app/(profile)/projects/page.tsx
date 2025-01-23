@@ -11,7 +11,6 @@ import {
   TableBody,
   TableCell,
 } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { getAllProjects } from "@/actions/deployments/getUserDeployments";
 import { useRouter } from "next/navigation";
@@ -19,11 +18,13 @@ import ServiceTypeBadge, {
   ProjectStatusBadge,
 } from "@/components/serviceTypeBadge";
 import { formatDate } from "@/lib/utils/formatDate";
+import { getRepositories } from "@/actions/projects/getRepositories";
 
 export default function DeploymentsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [deployments, setDeployments] = useState([]);
   const router = useRouter();
+  getRepositories();
 
   useEffect(() => {
     (async () => {
@@ -43,72 +44,84 @@ export default function DeploymentsPage() {
         <Card>
           <CardHeader>
             <div className="flex mb-5 justify-between items-center">
-              <CardTitle className="text-xl">Deployments</CardTitle>
-              <Button
-                variant="outline"
-                onClick={() => router.push("/projects/new")}
-              >
-                New Deployment
-              </Button>
+              <CardTitle className="text-xl">Projects</CardTitle>
+              <Link href="/projects/new">
+                <Button
+                  variant="outline"
+                  onClick={() => router.push("/projects/new")}
+                >
+                  New Project
+                </Button>
+              </Link>
             </div>
-            <div className="flex-1">
-              <Input
-                id="search-repos"
-                placeholder="Search deployments..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
+            {deployments?.length ? (
+              <div className="flex-1">
+                <Input
+                  id="search-repos"
+                  placeholder="Search deployments..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+            ) : null}
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Repository</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>URL</TableHead>
-                  <TableHead>Created</TableHead>
-                  <TableHead>Type</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {deployments.map((deployment: any) => (
-                  <TableRow
-                    className="cursor-pointer"
-                    key={deployment?.id}
-                    onClick={() => {
-                      router.push(`/projects/${deployment.id}`);
-                    }}
-                  >
-                    <TableCell className="font-medium">
-                      {deployment?.name}
-                    </TableCell>
-                    <TableCell>
-                      <ProjectStatusBadge status={deployment.status} />
-                    </TableCell>
-                    <TableCell>
-                      {deployment.deploymentUrl ? (
-                        <a
-                          href={deployment.deploymentUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-blue-500 hover:underline"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          {deployment.deploymentUrl}
-                        </a>
-                      ) : (
-                        "-"
-                      )}
-                    </TableCell>
-                    <TableCell>{formatDate(deployment.createdAt)}</TableCell>
-                    <TableCell>
-                      <ServiceTypeBadge service={deployment.projectType} />
-                    </TableCell>
+            {deployments?.length ? (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Repository</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>URL</TableHead>
+                    <TableHead>Created</TableHead>
+                    <TableHead>Type</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {deployments.map((deployment: any) => (
+                    <Link
+                      href={`/projects/${deployment.id}`}
+                      className="w-full table-row hover:bg-muted/50"
+                    >
+                      <TableCell className="font-medium ">
+                        {deployment?.name}
+                      </TableCell>
+                      <TableCell>
+                        <ProjectStatusBadge
+                          projectId={deployment.id}
+                          defaultStatus={deployment.status}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        {deployment.deploymentUrl ? (
+                          <a
+                            href={deployment.deploymentUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-500 hover:underline"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            {deployment.deploymentUrl}
+                          </a>
+                        ) : (
+                          "-"
+                        )}
+                      </TableCell>
+                      <TableCell>{formatDate(deployment.createdAt)}</TableCell>
+                      <TableCell>
+                        <ServiceTypeBadge service={deployment.projectType} />
+                      </TableCell>
+                    </Link>
+                  ))}
+                </TableBody>
+              </Table>
+            ) : (
+              <CardContent className="w-full flex items-center justify-center">
+                <p className="text-sm text-gray-600">
+                  You haven't created any projects yet.
+                </p>
+              </CardContent>
+            )}
           </CardContent>
         </Card>
       </div>

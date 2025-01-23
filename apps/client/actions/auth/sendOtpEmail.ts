@@ -6,7 +6,7 @@ import { AxiosError } from "axios";
 
 export async function sendOtpEmail(
   email: string,
-): Promise<{ expiresIn: Date; success: true } | ApiError> {
+): Promise<{ expiresIn: Date; success: true }> {
   const data = await $api
     .post("/auth/otp", { email })
     .then((res) => {

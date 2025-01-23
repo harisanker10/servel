@@ -3,13 +3,11 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
 import { join } from 'path';
 import { UserService } from './users.service';
 import { MailerService } from 'src/mailer.service';
-import { OtpService } from 'src/utils/otp.service';
 import { USER_SERVICE_NAME } from '@servel/proto/users';
 import { UserController } from './users.controller';
-import { JWTGuard } from '../auth/guards/jwt.guard';
-import { AuthService } from '../auth/auth.service';
 import { AuthModule } from '../auth/auth.module';
 import { OtpGuard } from '../auth/guards/otp.guard';
+import { RepositoriesController } from './repositories.controller';
 
 const protoPath = join(__dirname, '../../../proto/users.proto');
 @Module({
@@ -30,7 +28,7 @@ const protoPath = join(__dirname, '../../../proto/users.proto');
     ]),
     forwardRef(() => AuthModule),
   ],
-  controllers: [UserController],
+  controllers: [UserController, RepositoriesController],
   providers: [MailerService, OtpGuard, UserService],
   exports: [UserService],
 })

@@ -15,6 +15,7 @@ import { resetPassword } from "@/actions/auth/resetPassword";
 import { checkUserExist } from "@/actions/auth/checkUserExist";
 import { useToast } from "@/components/ui/use-toast";
 import { revalidatePath } from "next/cache";
+import { ApiError } from "next/dist/server/api-utils";
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState<string>("");
@@ -33,31 +34,32 @@ export default function ForgotPassword() {
 
   const handleEmailSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+
     setError(null);
     setIsLoading(true);
+
     try {
+      // Check if the user exists
       const existingUser = await checkUserExist(email);
-      console.log({ existingUser });
-      return;
-    } catch (error) {}
-    // if (typeof existingUser === "object" && "error" in existingUser) {
-    //   setError(existingUser.message);
-    // } else {
-    //   if (!existingUser) {
-    //     console.log("apparaelrkj", existingUser);
-    //     setError("User doesn't exist.");
-    //     setIsLoading(false);
-    //     return;
-    //   }
-    // }
-    const res = await sendOtpEmail(email);
-    if (typeof res === "object" && "error" in res) {
-      setError(res.message);
-    } else {
+      if (existingUser.success && !existingUser.exist) {
+        throw new Error("User doesn't exist");
+      }
+
+      // Send OTP email
+      const res = await sendOtpEmail(email);
       startTimer(res.expiresIn);
       setEmailSent(true);
+    } catch (error) {
+      if (error instanceof Error) {
+        setError(error.message);
+      } else if ((error as ApiError)?.message) {
+        setError((error as ApiError).message);
+      } else {
+        setError("An unexpected error occurred");
+      }
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
   };
 
   const handleOtpSubmit = async () => {

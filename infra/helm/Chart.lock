@@ -8,8 +8,14 @@ dependencies:
 - name: build-service
   repository: file://charts/build-service/
   version: 0.1.0
-- name: kafka
-  repository: https://ricardo-aires.github.io/helm-charts/
-  version: 0.2.1
-digest: sha256:9156f73568f00bb15c9e691824dcaa267f5c4cf7530586c43aa9f3b82b9fc375
-generated: "2024-11-11T09:17:09.274118062+05:30"
+- name: strimzi-kafka
+  repository: file://charts/strimzi-kafka/
+  version: 0.1.0
+- name: strimzi-kafka-operator
+  repository: https://strimzi.io/charts/
+  version: 0.38.0
+- name: roles
+  repository: file://charts/roles/
+  version: 0.1.0
+digest: sha256:4c55521ab250856f4f37e59a5f989d2bce92f5ce9901dcc7e5e57b1b5f6f7bfd
+generated: "2025-01-01T16:01:19.997362037+05:30"

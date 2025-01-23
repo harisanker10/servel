@@ -6,7 +6,7 @@ import { Deployment } from 'src/types';
 export interface IProjectsRepository {
   createProject(data: CreateProjectDto): Promise<Project>;
   getProject(projectId: string): Promise<Project>;
-  getProjectsWithUserId(userId: string): Promise<(Project | void)[]>;
+  getProjectsOfUser(userId: string): Promise<(Project | void)[]>;
   updateProject(data: {
     projectId: string;
     updates: Partial<Record<keyof Project, any>>;
@@ -29,7 +29,7 @@ export interface WebService extends BaseDoc {
   runCommand: string;
   buildCommand: string;
   port: number;
-  image?: string | undefined;
+  builtImage?: string | undefined;
   clusterServiceName?: string | undefined;
   clusterDeploymentName?: string | undefined;
 }

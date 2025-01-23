@@ -1,11 +1,11 @@
 import { Module } from '@nestjs/common';
 import { AuthModule } from './modules/auth/auth.module';
 import { ProjectsModule } from './modules/projects/projects.module';
-import { DeploymentsModule } from './modules/deployments/deployments.module';
 import { UsersModule } from './modules/users/users.module';
 import { JwtModule as NestJwtModule } from '@nestjs/jwt';
 import { env } from 'process';
 import { OtpService } from './utils/otp.service';
+import { DeploymentsModule } from './modules/deployments/deployments.module';
 
 const JwtModule = NestJwtModule.register({
   global: true,

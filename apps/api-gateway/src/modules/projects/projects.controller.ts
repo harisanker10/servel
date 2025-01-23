@@ -9,83 +9,68 @@ import {
   Patch,
   Post,
   UseGuards,
+  UsePipes,
 } from '@nestjs/common';
 import { ClientGrpc } from '@nestjs/microservices';
-import {
-  ProjectType,
-  CreateProjectDto,
-  CreateProjectDtoRes,
-  WebServiceData,
-  StaticSiteData,
-  ImageData,
-  DeploymentData,
-} from '@servel/common';
 import { lastValueFrom } from 'rxjs';
 import { JWTGuard } from '../auth/guards/jwt.guard';
 import {
+  CreateProjectDto,
+  DEPLOYMENT_SERVICE_NAME,
+  DeploymentServiceClient,
   PROJECTS_SERVICE_NAME,
   ProjectsServiceClient,
 } from '@servel/proto/projects';
 import { User } from 'src/utils/user.decorator';
 import { ReqUser } from 'types/JWTPayload';
+import { ZodPipe } from 'src/pipes/zodValidation.pipe';
+import {
+  CreateProjectDtoRes,
+  RedeployProjectDto,
+} from '@servel/common/api-gateway-dto';
+import {
+  DeploymentStatus,
+  ProjectStatus,
+  ProjectType,
+} from '@servel/common/types';
+import {
+  createProjectSchema,
+  redeployProjectSchema,
+} from '@servel/common/zodSchemas';
 
 @Controller('/projects')
 @UseGuards(JWTGuard)
 export class ProjectsController implements OnModuleInit {
   private projectsGrpcService: ProjectsServiceClient;
+  private deploymentsGrpcService: DeploymentServiceClient;
+
   constructor(@Inject(PROJECTS_SERVICE_NAME) private client: ClientGrpc) {}
   onModuleInit() {
     this.projectsGrpcService = this.client.getService<ProjectsServiceClient>(
       PROJECTS_SERVICE_NAME,
     );
+    this.deploymentsGrpcService =
+      this.client.getService<DeploymentServiceClient>(DEPLOYMENT_SERVICE_NAME);
   }
 
-  //TODO:
-  //   rpc CreateEnvironment(CreateEnvDto) returns (Env) {}
-  //   rpc GetEnvironment(GetEnvDto) returns (Env) {}
-  //   rpc GetAllEnvironments(GetAllEnvDto) returns (Env) {}
-  //   rpc UpdateEnvironment(UpdateEnvDto) returns (Env) {}
-  //   rpc DeleteEnvironment(GetEnvDto) returns (Env) {}
-
   @Post('/')
-  // @UsePipes(new ZodPipe(createProjectSchema))
+  @UsePipes(new ZodPipe(createProjectSchema))
   async createProject(
     @User() user: ReqUser,
     @Body() dto: CreateProjectDto,
   ): Promise<CreateProjectDtoRes> {
-    let webServiceData: WebServiceData | undefined;
-    let staticSiteData: StaticSiteData | undefined;
-    let imageData: ImageData | undefined;
-
-    if (dto.projectType === ProjectType.STATIC_SITE) {
-      staticSiteData = dto.data as StaticSiteData;
-    } else if (dto.projectType === ProjectType.WEB_SERVICE) {
-      webServiceData = dto.data as WebServiceData;
-    } else if (dto.projectType === ProjectType.IMAGE) {
-      imageData = dto.data as ImageData;
-    }
-
+    console.log({ dto });
+    console.log({ user });
     const project = await lastValueFrom(
-      this.projectsGrpcService.createProject({
-        ...dto,
-        staticSiteData,
-        webServiceData,
-        imageData,
-        env: '',
-        userId: user.id,
-      }),
+      this.projectsGrpcService.createProject({ ...dto, userId: user.id }),
     );
-
-    console.log({ project, depls: project.deployments });
-
     return {
       ...project,
-      //@ts-ignore
+      status: project.status as ProjectStatus,
       deployments: project.deployments.map((depl) => ({
         ...depl,
-        data: (depl.imageData ||
-          depl.webServiceData ||
-          depl.staticSiteData) as DeploymentData,
+        logsUrl: '',
+        status: depl.status as DeploymentStatus,
       })),
     };
   }
@@ -95,7 +80,6 @@ export class ProjectsController implements OnModuleInit {
     @User() user: ReqUser,
     @Param('projectId') projectId: string,
   ) {
-    console.log({ projectId });
     const project = await lastValueFrom(
       this.projectsGrpcService.getProject({ projectId }),
     );
@@ -118,26 +102,19 @@ export class ProjectsController implements OnModuleInit {
         userId: user.id,
       }),
     );
-    console.log({ projects: JSON.stringify(projects) });
     return projects;
   }
 
   @Patch('/redeploy')
-  async retryProject(@Body() body: any, @User() user: ReqUser) {
-    console.log({ body });
+  @UsePipes(new ZodPipe(redeployProjectSchema))
+  async redeploy(@Body() body: RedeployProjectDto, @User() user: ReqUser) {
     await lastValueFrom(
-      this.projectsGrpcService.stopProject({ projectId: body.projectId }),
+      this.projectsGrpcService.redeployProject({
+        env: [],
+        ...body,
+        userId: user.id,
+      }),
     );
-    return this.projectsGrpcService.createDeployment({
-      projectId: body.projectId,
-      userId: user.id,
-      env: body.env,
-      imageData: body.projectType === ProjectType.IMAGE ? body : undefined,
-      staticSiteData:
-        body.projectType === ProjectType.STATIC_SITE ? body : undefined,
-      webServiceData:
-        body.projectType === ProjectType.WEB_SERVICE ? body : undefined,
-    });
   }
 
   @Patch('/stop')
@@ -154,9 +131,9 @@ export class ProjectsController implements OnModuleInit {
   }
 
   @Post('/start')
-  async startDeployment(@Body() body: { projectId: string }) {
+  async startDeployment(@Body() body: { deploymentId: string }) {
     return this.projectsGrpcService.startProject({
-      projectId: body.projectId,
+      deploymentId: body.deploymentId,
     });
   }
 
@@ -167,8 +144,13 @@ export class ProjectsController implements OnModuleInit {
     });
   }
 
-  @Get('/analytics/:projectId')
-  async getAnalytics(@Param('projectId') projectId: string) {
-    return this.projectsGrpcService.getRequests({ projectId });
+  @Patch('/retry')
+  async retryProject(@Body('deploymentId') deploymentId: string) {
+    return this.projectsGrpcService.retryAndDeployProject({ deploymentId });
   }
+
+  // @Get('/analytics/:projectId')
+  // async getAnalytics(@Param('projectId') projectId: string) {
+  //   return this.projectsGrpcService.getRequests({ projectId });
+  // }
 }

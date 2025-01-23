@@ -5,10 +5,18 @@ import { AppModule } from 'src/app.module';
 import { KafkaModule } from '../kafka/kafka.module';
 import { DeploymentStrategyResolver } from 'src/deploymentStrategy/deployment.strategy.resolver';
 import { S3Service } from 'src/services/s3.service';
+import { KubernetesService } from 'src/services/kubernetes.service';
+import { ManifestService } from 'src/services/manifest.service';
 
 @Module({
   imports: [forwardRef(() => AppModule), KafkaModule],
   controllers: [BuildController],
-  providers: [S3Service, BuildService, DeploymentStrategyResolver],
+  providers: [
+    ManifestService,
+    KubernetesService,
+    BuildService,
+    S3Service,
+    DeploymentStrategyResolver,
+  ],
 })
 export class BuildModule {}

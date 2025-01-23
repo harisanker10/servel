@@ -14,7 +14,7 @@ export interface User {
 
 export interface AccessTokens {
   accessToken: string;
-  refreshToken: string;
+  refreshToken?: string;
   provider: string;
 }
 export enum AuthType {

@@ -1,22 +1,49 @@
-import { Injectable } from '@nestjs/common';
-import { ImageData, StaticSiteData, WebServiceData } from '@servel/common';
+import { ProjectType } from '@servel/common/api-gateway-dto';
+import {
+  ImageData,
+  InstanceType,
+  StaticSiteData,
+  WebServiceData,
+} from '@servel/common/types';
 import { DeploymentData } from 'src/types/deployment';
-import { Env } from 'src/types/env';
 
-@Injectable()
-export abstract class DeploymentStrategy {
-  protected readonly data: {
-    deploymentName: string;
+export abstract class DeploymentStrategy<
+  T extends ImageData | WebServiceData | StaticSiteData =
+    | ImageData
+    | WebServiceData
+    | StaticSiteData,
+> {
+  protected readonly envs: { key: string; value: string }[];
+  protected readonly data: T & {
+    envs?: { name: string; value: string }[];
+  };
+  protected readonly metadata: {
+    name: string;
+    projectId: string;
     deploymentId: string;
-  } & (WebServiceData | ImageData | StaticSiteData);
-  protected readonly env: Env | undefined;
-  constructor({ data, env }: { data: DeploymentData; env: Env | undefined }) {
-    this.data = data;
-    this.env = env;
+    instanceType?: InstanceType | undefined;
+  };
+
+  constructor(data: DeploymentData) {
+    const { projectType } = data;
+    if (projectType === ProjectType.STATIC_SITE) {
+      this.data = data.staticSiteData as T;
+    } else if (projectType === ProjectType.IMAGE) {
+      this.data = data.imageData as T;
+    } else if (projectType === ProjectType.WEB_SERVICE) {
+      this.data = data.webServiceData as T;
+    }
+    this.metadata = data;
   }
+
   abstract build(): Promise<any>;
   abstract deploy(): Promise<any>;
-  getData() {
-    return { ...this.data, env: this.env };
+
+  protected getData() {
+    return this.data as T;
+  }
+
+  protected getMetadata() {
+    return this.metadata;
   }
 }

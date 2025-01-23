@@ -58,14 +58,8 @@ export function UpdatePasswordCard({ email }: { email: string }) {
   const handleResetPassword = async () => {
     const valid = validate();
     if (valid) {
-      const res = await resetPassword(email, otp as string, password);
-      if (res && "error" in res) {
-        toast({
-          variant: "destructive",
-          title: "Failed",
-          description: res.message,
-        });
-      } else {
+      try {
+        await resetPassword(email, otp as string, password);
         toast({
           title: "Success",
           description: "Password updated successfully.",
@@ -73,6 +67,13 @@ export function UpdatePasswordCard({ email }: { email: string }) {
         setPassword("");
         setConfirmPassword("");
         setOtp("");
+      } catch (error) {
+        console.log({ error });
+        toast({
+          variant: "destructive",
+          title: "Failed",
+          description: error?.message,
+        });
       }
     }
   };

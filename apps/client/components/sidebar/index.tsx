@@ -22,13 +22,6 @@ export default function SideBar() {
     <aside className="sticky top-0 flex w-14 flex-col border-r bg-background sm:flex min-h-screen">
       <nav className="flex flex-col items-center gap-4 px-2 sm:py-5 min-h-screen">
         <TooltipProvider>
-          <Link
-            href="/profile"
-            className={`flex h-9 w-9 ${path.includes("profile") ? activeStyle : inactiveStle} items-center justify-center rounded-lg text-accent-foreground transition-colors hover:text-foreground md:h-8 md:w-8`}
-          >
-            <UserIcon className="h-5 w-5 transition-all group-hover:scale-110" />
-            <span className="sr-only">Profile</span>
-          </Link>
           <Tooltip>
             <TooltipTrigger asChild>
               <Link
@@ -46,6 +39,23 @@ export default function SideBar() {
               Deployments
             </TooltipContent>
           </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Link
+                href="/profile"
+                className={`flex h-9 w-9 ${path.includes("profile") ? activeStyle : inactiveStle} items-center justify-center rounded-lg text-accent-foreground transition-colors hover:text-foreground md:h-8 md:w-8`}
+              >
+                <UserIcon className="h-5 w-5 transition-all group-hover:scale-110" />
+              </Link>
+            </TooltipTrigger>
+            <TooltipContent
+              side="right"
+              className="relative left-2 text-sm bg-secondary rounded-md p-2"
+            >
+              Profile
+            </TooltipContent>
+          </Tooltip>
+
           <Tooltip>
             <TooltipTrigger asChild>
               <Link

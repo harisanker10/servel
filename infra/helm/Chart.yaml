@@ -18,6 +18,12 @@ dependencies:
   - name: build-service
     repository: file://charts/build-service/
     version: "0.1.0"
-  - name: kafka
-    version: "0.2.1"
-    repository: "https://ricardo-aires.github.io/helm-charts/"
+  - name: strimzi-kafka
+    version: "0.1.0"
+    repository: file://charts/strimzi-kafka/
+  - name: strimzi-kafka-operator
+    version: 0.38.0 # Use the desired version
+    repository: https://strimzi.io/charts/
+  - name: roles
+    version: "0.1.0"
+    repository: file://charts/roles/

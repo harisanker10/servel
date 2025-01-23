@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { DeploymentStatus, ProjectType } from '@servel/common';
+import { DeploymentStatus, ProjectType } from '@servel/common/types';
 import { Types } from 'mongoose';
 
 @Schema({
@@ -20,19 +20,20 @@ export class Deployment {
   @Prop({
     type: String,
     enum: DeploymentStatus,
-    default: DeploymentStatus.active,
+    default: DeploymentStatus.ACTIVE,
   })
   status: DeploymentStatus;
 
   @Prop({
     required: true,
+    enum: ProjectType,
   })
-  deploymentId: string;
+  projectType: ProjectType;
 
   @Prop({
-    type: { id: String, values: {} },
+    required: true,
   })
-  env?: { id: string; values: Record<string, string> } | undefined;
+  deploymentId: string;
 
   @Prop()
   clusterServiceName?: string | undefined;
@@ -41,10 +42,13 @@ export class Deployment {
   clusterDeploymentName?: string | undefined;
 
   @Prop()
-  clusterContainerName?: string | undefined;
+  bucketPath?: string | undefined;
 
   @Prop()
-  s3Path?: string | undefined;
+  projectId: string;
+
+  @Prop()
+  projectName: string;
 
   @Prop({ type: Number })
   port?: number | string;
@@ -52,13 +56,14 @@ export class Deployment {
 
 export interface DeploymentObject {
   id: string;
+  projectName: string;
+  deploymentId: string;
   status: DeploymentStatus;
   projectId: Types.ObjectId;
-  env?: { id: string; values: Record<string, string> } | undefined;
+  projectType: ProjectType;
   clusterServiceName?: string | undefined;
   clusterDeploymentName?: string | undefined;
-  clusterContainerName?: string | undefined;
-  s3Path?: string | undefined;
+  bucketPath?: string | undefined;
   port?: number | undefined;
   createdAt: string;
   updatedAt: string;

@@ -4,7 +4,7 @@ import { $api } from "@/http";
 
 export async function retryDeployment(deploymentId: string) {
   const res = await $api
-    .patch("/deployments/retry", { deploymentId })
+    .patch("/projects/retry", { deploymentId })
     .then((res) => res.data)
     .catch((err) => {
       console.log(err);

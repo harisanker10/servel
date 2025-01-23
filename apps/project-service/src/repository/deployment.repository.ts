@@ -40,15 +40,7 @@ export class DeploymentRepository implements IDeploymentsRepository {
 
   async updateDeploymentData(
     deplId: string,
-    updates: Partial<
-      Record<
-        Exclude<
-          keyof (IWebService & IStaticSite & IImage),
-          'id' | 'createdAt' | 'updatedAt'
-        >,
-        string
-      >
-    >,
+    updates: Partial<IWebService | IImage | IStaticSite>,
   ): Promise<IDeployment> {
     const depl = await this.deploymentModel
       .findOne({ _id: deplId })
@@ -74,7 +66,6 @@ export class DeploymentRepository implements IDeploymentsRepository {
   }
 
   async updateDeploymentStatus(deploymentId: string, status: DeploymentStatus) {
-    console.log({ updatingDeplSttus: status });
     await this.deploymentModel
       .findOneAndUpdate({ _id: deploymentId }, { status }, { new: true })
       .then((doc) => doc && doc.toObject<IDeployment>());
@@ -84,6 +75,7 @@ export class DeploymentRepository implements IDeploymentsRepository {
   findDeploymentsOfProject(projectId: string): Promise<IDeployment[]> {
     return this.deploymentModel
       .find({ projectId })
+      .sort({ createdAt: -1 })
       .then(
         (docs) => docs && docs.map((doc) => doc && doc.toObject<IDeployment>()),
       );
@@ -169,15 +161,17 @@ export class DeploymentRepository implements IDeploymentsRepository {
 
   findActiveDeploymentOfProject(projectId: string): Promise<IDeployment> {
     return this.deploymentModel
-      .findOne({ projectId, status: DeploymentStatus.ACTIVE })
+      .findOne({
+        projectId,
+        status: { $in: [DeploymentStatus.ACTIVE, DeploymentStatus.STARTING] },
+      })
       .then((doc) => doc && doc.toObject<IDeployment>());
   }
 
   updateActiveDeploymentStatusOfProject(
     projectId: string,
     status: DeploymentStatus,
-  ) {
-    console.log({ updatingActiveDeplStatus: status });
+  ): Promise<IDeployment> {
     return this.deploymentModel
       .findOneAndUpdate(
         { projectId, status: DeploymentStatus.ACTIVE },

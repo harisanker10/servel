@@ -7,7 +7,7 @@ export async function getAllProjects() {
     .get("/projects")
     .then((res) => res.data)
     .catch((err) => {
-      console.log(err);
+      // console.log(err);
     });
   return res?.projects || null;
 }

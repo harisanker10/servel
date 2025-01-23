@@ -9,7 +9,6 @@ import {
 import { ProjectsController } from './projects.controller';
 
 const path = join(__dirname, '../../../proto/projects.proto');
-console.log({ path });
 
 @Module({
   imports: [

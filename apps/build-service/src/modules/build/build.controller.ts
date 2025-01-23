@@ -6,17 +6,13 @@ import {
   Payload,
 } from '@nestjs/microservices';
 import {
-  BuildQueueMessage,
+  BuildAndDeployQueueDto,
   DeploymentQueueDto,
-  InstanceType,
   KafkaTopics,
-  ProjectStatus,
-  ProjectType,
 } from '@servel/common';
 import { KafkaService } from '../kafka/kafka.service';
 import { DeploymentStrategyResolver } from 'src/deploymentStrategy/deployment.strategy.resolver';
-import { BuildService } from './build.service';
-import checkDeploymentReplicaReadiness from 'src/utils/checkReadiness';
+import { ProjectType } from '@servel/common/types';
 
 @Controller()
 export class BuildController {
@@ -24,109 +20,77 @@ export class BuildController {
   constructor(
     private readonly kafkaService: KafkaService,
     private readonly deploymentStrategyResolver: DeploymentStrategyResolver,
-    private readonly buildService: BuildService,
-  ) {}
+  ) {
+    this.logger = new Logger(BuildController.name);
+  }
 
-  @EventPattern(KafkaTopics.buildQueue)
-  async build(
-    @Payload() data: BuildQueueMessage,
+  @EventPattern(KafkaTopics.BUILD_AND_DEPLOY_QUEUE)
+  async buildAndDeploy(
+    @Payload() data: BuildAndDeployQueueDto,
     @Ctx() context: KafkaContext,
   ) {
+    console.log({ buildAndDeployData: data });
     const heartbeat = context.getHeartbeat();
-    console.log('Got data in controller', data);
     const interval = setInterval(async () => {
       await heartbeat();
     }, 5000);
-    this.kafkaService.emitDeploymentStatusUpdate({
-      deploymentId: data.deploymentId,
-      updates: { status: ProjectStatus.BUILDING },
-    });
 
     try {
       const deployment = this.deploymentStrategyResolver.resolve({
-        data: {
-          deploymentId: data.deploymentId,
-          deploymentName: data.name,
-          ...data.data,
-        },
-        env: data.env,
-        projectType: data.deploymentType,
+        deploymentId: data.deploymentId,
+        name: data.name,
+        staticSiteData:
+          'staticSiteServiceData' in data && data.staticSiteServiceData,
+        imageData: 'imageServiceData' in data && data.imageServiceData,
+        webServiceData: 'webServiceData' in data && data.webServiceData,
+        instanceType: data.instanceType,
+        envs: data.envs,
+        projectId: data.projectId,
+        projectType: data.projectType,
       });
-      console.log({ deployement: deployment });
+
       await deployment.build();
-      this.kafkaService.emitDeploymentStatusUpdate({
-        deploymentId: data.deploymentId,
-        updates: { status: ProjectStatus.DEPLOYING },
-      });
-
       await deployment.deploy();
-
-      if (
-        data.deploymentType !== ProjectType.STATIC_SITE &&
-        (await checkDeploymentReplicaReadiness(
-          's' + deployment.getData().deploymentId,
-        ))
-      ) {
-        this.kafkaService.emitDeploymentStatusUpdate({
-          deploymentId: data.deploymentId,
-          updates: { status: ProjectStatus.DEPLOYED },
-        });
-      }
-
-      this.kafkaService.emitDeploymentStatusUpdate({
-        deploymentId: data.deploymentId,
-        updates: {
-          status: ProjectStatus.DEPLOYED,
-          deploymentUrl: `http://${data.deploymentId}.servel.com`,
-        },
-      });
     } catch (err) {
-      console.log('error caught in build controller');
-      console.log({ err });
-      this.kafkaService.emitDeploymentStatusUpdate({
+      this.logger.error(err);
+      console.error(err);
+      this.kafkaService.emitDeploymentFailedEvent({
         deploymentId: data.deploymentId,
-        updates: {
-          status: ProjectStatus.FAILED,
-        },
+        projectId: data.projectId,
+        err: err.name || err.message || err.toString(),
       });
     } finally {
       clearInterval(interval);
     }
   }
 
-  @EventPattern(KafkaTopics.deploymentQueue)
-  async deploy(
-    @Payload() data: DeploymentQueueDto,
-    @Ctx() context: KafkaContext,
-  ) {
+  @EventPattern(KafkaTopics.DEPLOYMENT_QUEUE)
+  async deploy(@Payload() data: DeploymentQueueDto) {
+    console.log({ deploymentQueueData: data });
     try {
-      this.kafkaService.emitDeploymentStatusUpdate({
+      const deployment = this.deploymentStrategyResolver.resolve({
         deploymentId: data.deploymentId,
-        updates: { status: ProjectStatus.DEPLOYING },
+        name: data.name,
+        staticSiteData:
+          data.projectType === ProjectType.STATIC_SITE &&
+          data.staticSiteServiceData,
+        imageData:
+          data.projectType === ProjectType.IMAGE && data.imageServiceData,
+        webServiceData:
+          data.projectType === ProjectType.WEB_SERVICE && data.webServiceData,
+        instanceType: data.instanceType,
+        envs: data.envs,
+        projectId: data.projectId,
+        projectType: data.projectType,
       });
-
-      await this.buildService.runImage({
-        deploymentName: data.deploymentName,
-        deploymentId: data.deploymentId,
-        imageName: data.image,
-        port: data.port,
-        envs: {},
-        instanceType: InstanceType.TIER_0,
-      });
-      if (await checkDeploymentReplicaReadiness('s' + data.deploymentId)) {
-        this.kafkaService.emitDeploymentStatusUpdate({
-          deploymentId: data.deploymentId,
-          updates: {
-            status: ProjectStatus.DEPLOYED,
-            deploymentUrl: `http://${data.deploymentId}.servel.com`,
-          },
-        });
-      }
+      await deployment.deploy();
     } catch (error) {
-      console.log({ error });
-      this.kafkaService.emitDeploymentStatusUpdate({
+      console.log('Deployment Failed');
+      console.log(error);
+      this.kafkaService.emitDeploymentFailedEvent({
         deploymentId: data.deploymentId,
-        updates: { status: ProjectStatus.FAILED },
+        projectId: data.projectId,
+        err: error.message || error.name || error.toString(),
       });
     }
   }

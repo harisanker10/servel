@@ -49,6 +49,9 @@ import ServiceTypeBadge, {
 } from "@/components/serviceTypeBadge";
 import RollbackBtn from "./rollbackBtn";
 import { startProject } from "@/actions/projects/startProject";
+import { getLogs } from "@/actions/deployments/getLogs";
+import { DeploymentLogViewer } from "@/components/deployment-log-viewer";
+import Link from "next/link";
 
 export default function ProjectView() {
   const router = useRouter();
@@ -56,12 +59,11 @@ export default function ProjectView() {
   const [stopLoading, setStopLoading] = useState(false);
   const [analytics, setAnalytics] = useState<any>();
   const params = useParams();
+  const [deployments, setDeployments] = useState<Deployment[] | null>(null);
 
-  console.log({ analytics });
-
-  const [deployments, setDeployments] = useState<
-    Deployment<WebServiceData | StaticSiteData>[] | null
-  >(null);
+  const activeDeployment =
+    Array.isArray(deployments) &&
+    deployments.find((depl) => depl.status === DeploymentStatus.ACTIVE);
 
   useEffect(() => {
     //@ts-ignore
@@ -83,7 +85,12 @@ export default function ProjectView() {
   };
 
   const handleStart = async () => {
-    if (project) await startProject(project?.id);
+    if (project)
+      await startProject(
+        deployments &&
+          Array.isArray(deployments) &&
+          deployments[deployments?.length - 1].id,
+      );
     router.refresh();
   };
 
@@ -118,7 +125,7 @@ export default function ProjectView() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-semibold mb-1">Status</p>
-              <ProjectStatusBadge status={project.status} />
+              <ProjectStatusBadge projectId={project.id} />
             </div>
             <div>
               <p className="text-sm font-semibold mb-1">Deployment URL</p>
@@ -195,6 +202,9 @@ export default function ProjectView() {
           </div>
         </CardFooter>
       </Card>
+      {activeDeployment && (
+        <DeploymentLogViewer deploymentId={activeDeployment.id} />
+      )}
       <Card>
         <CardHeader>
           <CardTitle className="text-2xl font-bold">Deployments</CardTitle>
@@ -203,6 +213,7 @@ export default function ProjectView() {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead>Sl.no</TableHead>
                 <TableHead>ID</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Commit ID</TableHead>
@@ -212,20 +223,58 @@ export default function ProjectView() {
             </TableHeader>
             <TableBody>
               {deployments &&
-                deployments.map((deployment) => (
+                deployments.map((deployment, index) => (
                   <TableRow
                     key={deployment.id}
-                    className={`cursor-pointer hover:bg-muted/50 ${deployment.status === "active" ? "bg-muted/20" : ""}`}
-                    onClick={() => router.push(`/deployments/${deployment.id}`)}
+                    className={`cursor-pointer hover:bg-muted/50 ${deployment.status === DeploymentStatus.ACTIVE ? "text-green-600 font-bold" : ""}`}
                   >
-                    <TableCell>{deployment.id}</TableCell>
-                    <TableCell>{deployment.status}</TableCell>
-                    <TableCell className="font-mono">
-                      {deployment.data?.commitId}
-                    </TableCell>
-                    <TableCell>{deployment.data?.branch}</TableCell>
                     <TableCell>
-                      {new Date(deployment.createdAt).toLocaleString()}
+                      <Link
+                        href={`/deployments/${deployment.id}`}
+                        className="w-full block"
+                      >
+                        {deployments.length - index}
+                      </Link>
+                    </TableCell>
+                    <TableCell>
+                      <Link
+                        href={`/deployments/${deployment.id}`}
+                        className="w-full block"
+                      >
+                        {deployment.id}
+                      </Link>
+                    </TableCell>
+                    <TableCell>
+                      <Link
+                        href={`/deployments/${deployment.id}`}
+                        className={`w-full block`}
+                      >
+                        {deployment.status}
+                      </Link>
+                    </TableCell>
+                    <TableCell className="font-mono">
+                      <Link
+                        href={`/deployments/${deployment.id}`}
+                        className="w-full block"
+                      >
+                        {deployment.data?.commitId}
+                      </Link>
+                    </TableCell>
+                    <TableCell>
+                      <Link
+                        href={`/deployments/${deployment.id}`}
+                        className="w-full block"
+                      >
+                        {deployment.data?.branch}
+                      </Link>
+                    </TableCell>
+                    <TableCell>
+                      <Link
+                        href={`/deployments/${deployment.id}`}
+                        className="w-full block"
+                      >
+                        {new Date(deployment.createdAt).toLocaleString()}
+                      </Link>
                     </TableCell>
                   </TableRow>
                 ))}

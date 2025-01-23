@@ -31,7 +31,7 @@ export class WebService {
   port: number;
 
   @Prop()
-  clusterImage?: string;
+  builtImage?: string;
 
   @Prop()
   clusterServiceName?: string;

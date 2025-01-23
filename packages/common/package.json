@@ -7,7 +7,9 @@
   "exports": {
     ".": "./dist/index.js",
     "./dto": "./dist/dtos/index.js",
-    "./types": "./dist/types/index.js"
+    "./types": "./dist/types/index.js",
+    "./api-gateway-dto": "./dist/api-gateway-dto/index.js",
+    "./zodSchemas": "./dist/zodSchemas/index.js"
   },
   "scripts": {
     "build": "tsc -b && tsc-alias",

@@ -57,10 +57,10 @@ export class UserService implements OnModuleInit {
         fullname: user.fullname,
         avatar: user.avatar,
         githubId: user.githubId,
-        accessTokens: {
+        accessToken: {
           accessToken: user.accessToken,
           refreshToken: user.refreshToken,
-          provider: AuthType.GOOGLE,
+          provider: user.authType,
         },
         authType: user.authType,
       }),
@@ -81,6 +81,10 @@ export class UserService implements OnModuleInit {
 
   async updateFullname(id: string, fullname: string) {
     return this.userService.updateUser({ id, updates: { fullname } });
+  }
+
+  async getAccessTokens(id?: string, email?: string) {
+    return this.userService.getAccessTokens({ email, id });
   }
 
   async getUser(

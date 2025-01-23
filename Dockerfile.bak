@@ -1,0 +1,27 @@
+# syntax=docker/dockerfile:1.4
+FROM node:alpine AS base
+RUN apk update
+WORKDIR /app
+RUN apk add --no-cache libc6-compat rsync
+RUN npm install pnpm turbo --global
+RUN pnpm config set store-dir ~/.pnpm-store
+
+FROM base as packages
+ARG PROJECT
+WORKDIR /app
+RUN --mount=type=bind,target=/docker-context \
+            rsync -amv --delete \
+            --exclude='node_modules' \
+            --exclude='*/node_modules' \
+            --include='package.json' \
+            --include='pnpm-lock' \
+            --include='*/' \
+            --exclude='*' \
+            /docker-context/packages /app/;
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json ./
+COPY ./apps/${PROJECT}/package.json ./apps/${PROJECT}/
+RUN pnpm install --frozen-lockfile
+COPY ./packages ./packages
+COPY ./apps/${PROJECT} ./apps/${PROJECT}
+RUN pnpm run build
+CMD node ./apps/${PROJECT}/dist/main

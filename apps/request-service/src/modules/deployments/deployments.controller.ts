@@ -1,65 +1,53 @@
-import { Controller, Inject, OnModuleInit } from '@nestjs/common';
-import { ClientKafka, EventPattern } from '@nestjs/microservices';
-import { Kafka } from '@nestjs/microservices/external/kafka.interface';
+import { Controller } from '@nestjs/common';
+import { EventPattern } from '@nestjs/microservices';
 import {
-  ClusterUpdatesDto,
-  DeploymentUpdatesDto,
+  DeploymentBuildingEventDto,
+  DeploymentDeployedEventDto,
+  DeploymentStoppedEventDto,
   KafkaTopics,
-  ProjectStatus,
-  ProjectType,
-  StaticSiteUpdatesDto,
 } from '@servel/common';
-import { DeploymentsRepository } from 'src/repositories/deployment.repository';
+import { DeploymentStatus } from '@servel/common/types';
+import {
+  CreateDeploymentDto,
+  DeploymentsRepository,
+} from 'src/repositories/deployment.repository';
 
 @Controller()
 export class DeploymentsController {
   constructor(private readonly deploymentRepository: DeploymentsRepository) {}
 
-  @EventPattern(KafkaTopics.clusterUpdates)
-  async updateWebService(data: ClusterUpdatesDto) {
-    console.log('Got new deployement data', { data });
-    if (data.type === ProjectType.WEB_SERVICE) {
-      const existing = await this.deploymentRepository.getDeployment(
-        data.deploymentId,
-      );
-      if (!existing?.id) {
-        await this.deploymentRepository.createDeployment({
-          deploymentId: data.deploymentId,
-          port: data.data.port,
-          clusterServiceName: data.data.k8ServiceId,
-          clusterContainerName: data.data.k8ServiceId,
-          clusterDeploymentName: data.data.k8DeploymentId,
-        });
-      } else {
-        this.deploymentRepository.updateDeployment(data.deploymentId, {
-          port: data.data.port,
-          clusterServiceName: data.data.k8ServiceId,
-          clusterContainerName: data.data.k8ServiceId,
-          clusterDeploymentName: data.data.k8DeploymentId,
-        });
-      }
-    } else if (data.type === ProjectType.STATIC_SITE) {
-      // await this.deploymentRepository.createDeployment({
-      //   deploymentId: data.deploymentId,
-      //   s3Path: data.data.s3Path,
-      // });
-    }
+  @EventPattern(KafkaTopics.DEPLOYMENT_DEPLOYED_EVENT)
+  async handleDeployedEvent(data: DeploymentDeployedEventDto) {
+    console.log({ deployedEventData: data });
+    const depl: CreateDeploymentDto = {
+      status: DeploymentStatus.ACTIVE,
+      projectType: data.projectType,
+      deploymentId: data.deploymentId,
+      projectId: data.projectId,
+      projectName: data.name,
+      bucketPath: data?.staticSiteServiceData?.bucketPath,
+      clusterDeploymentName:
+        data?.webServiceData?.clusterDeploymentName ??
+        data?.imageServiceData?.clusterDeploymentName,
+      clusterServiceName:
+        data?.webServiceData?.clusterServiceName ??
+        data?.imageServiceData?.clusterServiceName,
+      port: data?.webServiceData?.port ?? data?.imageServiceData?.port,
+    };
+    await this.deploymentRepository.upsertDeployment(depl);
   }
 
-  @EventPattern(KafkaTopics.staticSiteUpdates)
-  async updateStaticSite(data: StaticSiteUpdatesDto) {
-    const existing = await this.deploymentRepository.getDeployment(
-      data.deploymentId,
-    );
-    if (existing?.id && 'status' in data) {
-      this.deploymentRepository.updateDeployment(data.deploymentId, {
-        status: data.status,
-      });
-    } else {
-      await this.deploymentRepository.createDeployment({
-        deploymentId: data.deploymentId,
-        s3Path: data.s3Path,
-      });
-    }
+  @EventPattern(KafkaTopics.DEPLOYMENT_STOPPED_EVENT)
+  async handleStoppedEvent(data: DeploymentStoppedEventDto) {
+    console.log({ stoppedEventData: data });
+    await this.deploymentRepository.updateDeployment(data.deploymentId, {
+      status: DeploymentStatus.STOPPED,
+    });
+  }
+  @EventPattern(KafkaTopics.DEPLOYMENT_BUILDING_EVENT)
+  async handleBuildingEvent(data: DeploymentBuildingEventDto) {
+    await this.deploymentRepository.updateDeployment(data.deploymentId, {
+      status: DeploymentStatus.STOPPED,
+    });
   }
 }

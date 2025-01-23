@@ -4,9 +4,9 @@ import { Model } from 'mongoose';
 import { Project } from 'src/schemas/project.schema';
 import {
   CreateProjectDto,
-  Project as IProject,
   IProjectsRepository,
 } from './interfaces/IProjects.repository';
+import { Project as IProject } from 'src/types';
 import { ProjectStatus } from '@servel/common/types';
 
 @Injectable()
@@ -28,9 +28,10 @@ export class ProjectRepository implements IProjectsRepository {
       .then((doc) => doc?.toObject<IProject>());
   }
 
-  getProjectsWithUserId(userId: string): Promise<(IProject | null)[]> {
+  getProjectsOfUser(userId: string): Promise<(IProject | null)[]> {
     return this.projectModel
       .find({ userId })
+      .sort({ createdAt: -1 })
       .then(
         (docs) =>
           docs.length && docs.map((doc) => doc && doc.toObject<IProject>()),
@@ -50,12 +51,12 @@ export class ProjectRepository implements IProjectsRepository {
       .then((doc) => doc?.toObject<IProject>());
   }
 
-  async updateProjectStatus(projectId: string, status: ProjectStatus) {
-    await this.projectModel.findOneAndUpdate(
-      { _id: projectId },
-      { status },
-      { new: true },
-    );
-    return this.getProject(projectId);
+  async updateProjectStatus(
+    projectId: string,
+    status: ProjectStatus,
+  ): Promise<IProject> {
+    return this.projectModel
+      .findOneAndUpdate({ _id: projectId }, { status }, { new: true })
+      .then((doc) => doc && doc.toObject<IProject>());
   }
 }

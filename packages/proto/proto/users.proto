@@ -13,12 +13,12 @@ message User {
   string createdAt = 9;
   string updatedAt = 10;
   repeated string authType = 11;
-  optional AccessTokens accessTokens = 12;
+  optional AccessToken accessTokens = 12;
 }
 
-message AccessTokens {
+message AccessToken {
   string accessToken = 1;
-  string refreshToken = 2;
+  optional string refreshToken = 2;
   string provider = 3;
 }
 
@@ -28,6 +28,8 @@ service UserService {
   rpc FindOneUser(FindOneUserDto) returns (User) {}
   rpc FindAllUsers(Empty) returns (stream Users) {}
   rpc QueryUsers(stream PaginationDto) returns (stream Users) {}
+
+  rpc GetAccessTokens(FindOneUserDto) returns (AccessTokens) {}
 
   rpc RemoveUser(FindOneUserDto) returns (User) {}
 
@@ -54,7 +56,7 @@ message CreateUserDto {
   optional string fullname = 4;
   optional string githubId = 5;
   AuthType authType = 6;
-  optional AccessTokens accessTokens = 7;
+  optional AccessToken accessToken = 7;
 }
 
 message QueryUserDto {
@@ -85,6 +87,10 @@ message FindOneUserDto {
 }
 
 message Users { repeated User users = 1; }
+
+message AccessTokens {
+  repeated AccessToken accessToken = 1;
+}
 
 message PaginationDto {
   int32 page = 1;

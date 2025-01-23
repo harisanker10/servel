@@ -1,12 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { ClientKafka } from '@nestjs/microservices';
-import {
-  BuildQueueMessage,
-  ClusterUpdatesDto,
-  DeploymentUpdatesDto,
-  KafkaTopics,
-  ProjectType,
-} from '@servel/common';
 
 @Injectable()
 export class KafkaService {
@@ -29,12 +22,8 @@ export class KafkaService {
     }, 1000 * 15);
   }
 
-  emitDeploymentStatusUpdate(updateDto: DeploymentUpdatesDto) {
-    this.kafkaClient.emit(KafkaTopics.deploymentUpdates, updateDto);
-  }
-
-  emitClusterUpdates(data: ClusterUpdatesDto) {
-    console.log('emitting cluster update with data:', data);
-    this.kafkaClient.emit(KafkaTopics.clusterUpdates, data);
-  }
+  // emitClusterUpdates(data: ClusterUpdatesDto) {
+  //   console.log('emitting cluster update with data:', data);
+  //   this.kafkaClient.emit(KafkaTopics.clusterUpdates, data);
+  // }
 }

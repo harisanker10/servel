@@ -3,7 +3,10 @@
 import { $api } from "@/http";
 import { setAccessToken } from "@/lib/session/setSession";
 import { throwFormattedApiError } from "@/lib/utils/formatApiError";
-import { ErrorResponse, LoginResponseDto } from "@servel/common/dto";
+import {
+  ErrorResponse,
+  LoginResponseDto,
+} from "@servel/common/api-gateway-dto";
 import { AxiosError } from "axios";
 
 export async function login(email: string, password: string) {
@@ -18,7 +21,6 @@ export async function login(email: string, password: string) {
       }
     })
     .catch((err: AxiosError) => {
-      console.log({ err });
       return throwFormattedApiError(err);
     });
 

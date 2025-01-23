@@ -1,39 +1,59 @@
-FROM node:alpine AS base
-RUN npm install pnpm -g
+ARG NODE_VERSION=18.18.0
+
+# Alpine image
+FROM node:${NODE_VERSION}-alpine AS alpine
+RUN apk update
+RUN apk add --no-cache libc6-compat git buildctl
+
+# Setup pnpm and turbo on the alpine base
+FROM alpine AS base
+RUN npm install pnpm turbo --global
+RUN pnpm config set store-dir ~/.pnpm-store
+
+# Prune projects
+FROM base AS pruner
+ARG PROJECT
+
 WORKDIR /app
-COPY ./packages ./packages
-COPY ./pnpm*.yaml ./
-COPY ./package.json ./
-COPY ./turbo.json ./
-RUN pnpm install
+COPY . .
+RUN turbo prune --scope=${PROJECT} --docker
 
-# FROM base AS api-gateway
-# COPY ./pnpm*.yaml ./package.json ./turbo.json ./.turbo ./
-# COPY ./apps/api-gateway ./apps/api-gateway/
-# COPY ./packages/ ./packages/
-# RUN pnpm install
-# RUN pnpm run build
-# CMD ["pnpm","run","dev"]
+# Build the project
+FROM base AS builder
+ARG PROJECT
 
-FROM base as request-service
-WORKDIR /app/apps/request-service
-COPY ./apps/request-service/package.json ./apps/request-service/nest-cli.json ./
-RUN pnpm install
-COPY ./apps/request-service/ ./
-CMD ["pnpm", "run", "dev"]
+WORKDIR /app
 
-FROM base as build-service
-RUN apk add buildctl
-RUN apk add git
-WORKDIR /app/apps/build-service
-COPY ./apps/build-service/package.json ./apps/build-service/nest-cli.json ./
-RUN pnpm install
-COPY ./apps/build-service/ ./
-CMD ["pnpm", "run", "dev"]
+# Copy lockfile and package.json's of isolated subworkspace
+COPY --from=pruner /app/out/pnpm-lock.yaml ./pnpm-lock.yaml
+COPY --from=pruner /app/out/pnpm-workspace.yaml ./pnpm-workspace.yaml
+COPY --from=pruner /app/out/json/ .
 
-FROM base as projects-service
-WORKDIR /app/apps/projects
-COPY ./apps/projects/package.json ./apps/projects/nest-cli.json ./
-RUN pnpm install
-COPY ./apps/projects/ ./
-CMD ["pnpm", "run", "dev"]
+# First install the dependencies (as they change less often)
+RUN --mount=type=cache,id=pnpm,target=~/.pnpm-store pnpm install --frozen-lockfile
+
+# Copy source code of isolated subworkspace
+COPY --from=pruner /app/out/full/ .
+
+RUN turbo build --filter=${PROJECT}
+RUN --mount=type=cache,id=pnpm,target=~/.pnpm-store pnpm prune --prod --no-optional
+RUN rm -rf ./**/*/src
+
+# Final image
+FROM alpine AS runner
+ARG PROJECT
+
+# RUN addgroup --system --gid 1001 nodejs
+# RUN adduser --system --uid 1001 nodejs
+# USER nodejs
+
+WORKDIR /app
+# COPY --from=builder --chown=nodejs:nodejs /app .
+COPY --from=builder /app .
+WORKDIR /app/apps/${PROJECT}
+ARG PORT=8080
+ENV PORT=${PORT}
+ENV NODE_ENV=production
+EXPOSE ${PORT}
+
+CMD ["node" ,"dist/main" ]
